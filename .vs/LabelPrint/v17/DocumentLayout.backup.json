@@ -1,0 +1,119 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|c:\\users\\roman\\documents\\printer\\app\\labelprint\\labelprint\\socketcommunication.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|solutionrelative:labelprint\\socketcommunication.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|c:\\users\\roman\\documents\\printer\\app\\labelprint\\labelprint\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|solutionrelative:labelprint\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|c:\\users\\roman\\documents\\printer\\app\\labelprint\\labelprint\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|solutionrelative:labelprint\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|c:\\users\\roman\\documents\\printer\\app\\labelprint\\labelprint\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|solutionrelative:labelprint\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|c:\\users\\roman\\documents\\printer\\app\\labelprint\\labelprint\\form3.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|solutionrelative:labelprint\\form3.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|c:\\users\\roman\\documents\\printer\\app\\labelprint\\labelprint\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{FCA5919B-19DA-47D3-A826-772CEC332E21}|LabelPrint\\LabelPrint.csproj|solutionrelative:labelprint\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SocketCommunication.cs",
+              "DocumentMoniker": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\SocketCommunication.cs",
+              "RelativeDocumentMoniker": "LabelPrint\\SocketCommunication.cs",
+              "ToolTip": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\SocketCommunication.cs",
+              "RelativeToolTip": "LabelPrint\\SocketCommunication.cs",
+              "ViewState": "AgIAAJQAAAAAAAAAAAAiwMMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T11:13:14.004Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Form3.cs [N\u00E1vrh]",
+              "DocumentMoniker": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form3.cs",
+              "RelativeDocumentMoniker": "LabelPrint\\Form3.cs",
+              "ToolTip": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form3.cs [N\u00E1vrh]",
+              "RelativeToolTip": "LabelPrint\\Form3.cs [N\u00E1vrh]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T11:07:22.906Z",
+              "EditorCaption": " [N\u00E1vrh]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Form1.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form1.Designer.cs",
+              "RelativeDocumentMoniker": "LabelPrint\\Form1.Designer.cs",
+              "ToolTip": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form1.Designer.cs",
+              "RelativeToolTip": "LabelPrint\\Form1.Designer.cs",
+              "ViewState": "AgIAAM0AAAAAAAAAAAAowOAAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T10:59:55.069Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Form1.cs [N\u00E1vrh]",
+              "DocumentMoniker": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form1.cs",
+              "RelativeDocumentMoniker": "LabelPrint\\Form1.cs",
+              "ToolTip": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form1.cs [N\u00E1vrh]",
+              "RelativeToolTip": "LabelPrint\\Form1.cs [N\u00E1vrh]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T10:59:46.534Z",
+              "EditorCaption": " [N\u00E1vrh]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Form2.cs",
+              "DocumentMoniker": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form2.cs",
+              "RelativeDocumentMoniker": "LabelPrint\\Form2.cs",
+              "ToolTip": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form2.cs",
+              "RelativeToolTip": "LabelPrint\\Form2.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC4AAABIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T10:58:37.086Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Form2.cs [N\u00E1vrh]",
+              "DocumentMoniker": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form2.cs",
+              "RelativeDocumentMoniker": "LabelPrint\\Form2.cs",
+              "ToolTip": "C:\\Users\\roman\\Documents\\Printer\\App\\LabelPrint\\LabelPrint\\Form2.cs [N\u00E1vrh]",
+              "RelativeToolTip": "LabelPrint\\Form2.cs [N\u00E1vrh]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-17T10:58:19.675Z",
+              "EditorCaption": " [N\u00E1vrh]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

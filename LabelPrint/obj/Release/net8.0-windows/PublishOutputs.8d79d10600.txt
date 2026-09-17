@@ -1,0 +1,5 @@
+C:\Users\roman\Documents\Printer\Builds\LabelPrint.exe
+C:\Users\roman\Documents\Printer\Builds\LabelPrint.dll
+C:\Users\roman\Documents\Printer\Builds\LabelPrint.deps.json
+C:\Users\roman\Documents\Printer\Builds\LabelPrint.runtimeconfig.json
+C:\Users\roman\Documents\Printer\Builds\LabelPrint.pdb
