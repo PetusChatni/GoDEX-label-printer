@@ -47,9 +47,9 @@ namespace LabelPrint
         /// </summary>
         /// <param name="path">Where is image located</param>
         /// <returns>Byte array representing image</returns>
-        public static byte[] GetImageBytes(string? path)
+        public static byte[] GetImageBytes(string? path, string? filename)
         {
-            if (path == null)
+            if (path == null || filename == null)
                 return [];
 
             try
@@ -67,6 +67,7 @@ namespace LabelPrint
                             // Returns full 1-bit BMP byte array with 54-byte header
                             monoImg.SetResolution(203, 203);
                             monoImg.Save(ms, ImageFormat.Bmp);
+                            SaveImg(monoImg, filename);
                             return ms.ToArray();
                         }
                     }
@@ -76,6 +77,25 @@ namespace LabelPrint
             {
                 return [];
             }
+        }
+
+        private static void SaveImg(Bitmap bmp, string filename)
+        {
+            string path = $@"{AppContext.BaseDirectory}imgs";
+
+            try
+            {
+                if (!Directory.Exists(path))
+                    Directory.CreateDirectory(path);
+
+                path = $"{path}\\{filename}.bmp";
+
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                bmp.Save($@"imgs/{filename}.bmp", ImageFormat.Bmp);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
 
         #region Config file

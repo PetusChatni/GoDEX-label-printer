@@ -16,13 +16,19 @@ namespace LabelPrint
 
             // Checks if IP is empty
             if (ipInp == null || ipInp == "")
+            {
                 MessageBox.Show("Empty IP address", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
 
             // Tries to parse IP
             if (!IPAddress.TryParse(ipInp, out ip) || ip == null)
+            {
                 MessageBox.Show("Invalid IP address", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }   
 
-            return (ip != null);
+            return true;
         }
 
         /// <summary>

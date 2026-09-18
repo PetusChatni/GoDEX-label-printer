@@ -229,7 +229,7 @@ namespace LabelPrint
         public static bool AddImageToPrinter(ref TcpClient socket, IPAddress ip, int port, string path, string filename)
         {
             // Translates the file into byte array
-            byte[] bytes = FileHandler.GetImageBytes(path);
+            byte[] bytes = FileHandler.GetImageBytes(path, filename);
             if (bytes.Length < 1)
             {
                 MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
