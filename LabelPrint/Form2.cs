@@ -8,21 +8,43 @@ namespace LabelPrint
     {
         private Form3 form3;
 
-        private TcpClient printerSocket;
+        //private TcpClient printerSocket;
+        private Form1 parent;
         private SocketCommunicationHandler socketComHandler;
 
         private IPAddress? printerIP;
         private int printerPort;
 
-        private bool isReceivingData = false;
+        private string path;
+        private string filename;
+        private byte[] imageBytes;
 
-        public Form2(IPAddress? printerIP, int printerPort)
+        private bool isReceivingData = false;
+        private bool isConnected;
+        private bool updateDGVWithPrinterOutput = false;
+
+        public event EventHandler<RequestMonitoringStateChangeEventArgs>? RequestedMonitoringStateChange;
+        public event EventHandler<byte[]> SendData;
+
+        public Form2(Form1 form1, IPAddress? printerIP, int printerPort)
         {
             InitializeComponent();
 
             this.printerIP = printerIP;
             this.printerPort = printerPort;
             socketComHandler = new SocketCommunicationHandler(printerIP, printerPort);
+            parent = form1;
+        }
+
+        private void OnRequestMonitoringStateChange(bool newMonitoringState)
+        {
+            RequestedMonitoringStateChange?.Invoke(this, new RequestMonitoringStateChangeEventArgs(newMonitoringState, ref parent.PrinterSocket));
+        }
+
+        private void OnSendData(byte[] commandToSend)
+        {
+            //MessageBox.Show("Form2.cs; 46; Invoked SendData");
+            SendData?.Invoke(this, commandToSend);
         }
 
         #region Wrapper functions for SocketCommunication
@@ -33,7 +55,68 @@ namespace LabelPrint
         {
             isReceivingData = true;
 
-            SocketCommunicationTranslator.ProcessFiles(CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"), true), ref DGV_Files, true);
+            //MessageBox.Show("Form2.cs; 57; In UpdateFiles()");
+
+            //SocketCommunicationTranslator.ProcessFiles(), ref DGV_Files, true);
+            updateDGVWithPrinterOutput = true;
+            CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"));
+        }
+
+        public void UpdateFiles(string printerOutput)
+        {
+            //MessageBox.Show("Form2.cs; 67; In UpdateFiles(string)");
+
+            if (isReceivingData && updateDGVWithPrinterOutput)
+            {
+                //MessageBox.Show("Form2.cs; 68; Here");
+                SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files, true, new Action(
+                    () =>
+                    {
+                        DGV_Files.ColumnHeadersVisible = true;
+                        DGV_Files.Rows.Clear();
+                    }), new Action<string[]>((string[] data) =>
+                    {
+                        DGV_Files.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
+                    }));
+            }
+            else if (isReceivingData)
+            {
+                if (SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files)?.ContainsFilename(filename) == true)
+                {
+                    // Asks user whether they would like to delete the existing file, and does so if user agrees
+                    if (MessageBox.Show($"File with name: {filename} already exists. Would you like to delete the existing file?",
+                    "Filename conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    {
+                        CommunicateWithPrinter(Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
+                    }
+                    else
+                    {
+                        isReceivingData = false;
+                        return;
+                    }
+                }
+
+                CommunicateWithPrinter(socketComHandler.AddImageToPrinter(ref parent.PrinterSocket, path, filename, imageBytes));
+
+                // Closes Form3
+                if (form3.InvokeRequired)
+                {
+                    form3.BeginInvoke(new Action(() =>
+                    {
+                        form3.FormSubmitted -= UpdateFilesEventHandler;
+                        form3.Close();
+                    }));
+                }
+                else
+                {
+                    form3.FormSubmitted -= UpdateFilesEventHandler;
+                    form3.Close();
+                }
+            }
+            //else
+            //{
+            //    MessageBox.Show("Form2.cs; 116; Unhandled UpdateFiles option");
+            //}
 
             isReceivingData = false;
         }
@@ -53,14 +136,19 @@ namespace LabelPrint
             if (filename == null || filename == "")
                 return;
 
-            socketComHandler.AddImageToPrinter(ref printerSocket, path, filename);
+            this.filename = filename;
+            this.path = path;
 
-            // Closes Form3
-            form3.FormSubmitted -= UpdateFilesEventHandler;
-            form3.Close();
+            imageBytes = FileHandler.GetImageBytes(path, filename);
+            if (imageBytes.Length < 1)
+            {
+                MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
 
-            // Updates files
-            UpdateFiles();
+            isReceivingData = true;
+            updateDGVWithPrinterOutput = false;
+            CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"));
         }
 
         /// <summary>
@@ -69,12 +157,9 @@ namespace LabelPrint
         /// <param name="commandToSend">Command / Data that will be sent to the printer</param>
         /// <param name="shouldReceiveData">Whether app should wait for data from printer or not</param>
         /// <returns>Whatever printer returned</returns>
-        private string CommunicateWithPrinter(byte[] commandToSend, bool shouldReceiveData = false)
+        private void CommunicateWithPrinter(byte[] commandToSend)
         {
-            if (printerSocket == null)
-                return SocketCommunicationHandler.CommunicateWithRemote(ref printerSocket, printerIP, printerPort, commandToSend, shouldReceiveData);
-            else
-                return socketComHandler.CommunicateWithRemote(ref printerSocket, commandToSend, shouldReceiveData);
+            OnSendData(commandToSend);
         }
         #endregion
 
@@ -86,7 +171,7 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void BTN_Retrieve_Click(object sender, EventArgs e)
         {
-            if(!isReceivingData)
+            if (!isReceivingData && parent.PrinterSocket.Connected)
                 UpdateFiles();
         }
 
@@ -97,6 +182,9 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void BTN_AddImg_Click(object sender, EventArgs e)
         {
+            if (!parent.PrinterSocket.Connected)
+                return;
+
             if (form3 == null)
                 form3 = new Form3();
                 form3.FormSubmitted += UpdateFilesEventHandler;
@@ -110,8 +198,8 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void Form2_FormClosed(object sender, FormClosedEventArgs e)
         {
-            if (printerSocket != null)
-                printerSocket.Close();
+            if (parent.PrinterSocket != null)
+                parent.PrinterSocket.Close();
 
             System.Environment.Exit(1);
         }
@@ -123,8 +211,11 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void DGV_Files_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
+            if (!parent.PrinterSocket.Connected)
+                return;
+
             // Checks if the button was clicked
-            if (e.RowIndex < 0 || DGV_Files.Columns[e.ColumnIndex].Name != "btnColumn" || printerSocket == null)
+            if (e.RowIndex < 0 || DGV_Files.Columns[e.ColumnIndex].Name != "btnColumn" || parent.PrinterSocket == null)
                 return;
 
             // Tries to get the filename
@@ -152,10 +243,40 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void homeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Checks if printer socket isn't null; if so, closes it
-            printerSocket?.Close();
+            isConnected = parent.PrinterSocket == null ? false : parent.PrinterSocket.Connected;
             Visible = false;
         }
+
+        /// <summary>
+        /// Changes L_ConnectionStatus text & color
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+
+        public void ConnectionStatusChanged(object? sender, StatusChangeEventArgs e)
+        {
+            if (!e.IsConnected)
+                MessageBox.Show("Disconnected");
+
+            // Check if the current thread is NOT the main UI thread
+            if (L_ConnectionStatus.InvokeRequired)
+            {
+                // Safely marshal the execution to the UI thread
+                L_ConnectionStatus.BeginInvoke(new Action(() =>
+                {
+                    L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
+                    L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
+                }));
+            }
+            else
+            {
+                // Direct update if already on UI thread
+                L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
+                L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
+            }
+        }
         #endregion
+
+        public bool IsConnected { get { return isConnected; } }
     }
 }

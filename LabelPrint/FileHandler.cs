@@ -1,4 +1,5 @@
 ﻿using System.Drawing.Imaging;
+using System.Text;
 using System.Text.Json;
 
 namespace LabelPrint
@@ -67,7 +68,7 @@ namespace LabelPrint
                             // Returns full 1-bit BMP byte array with 54-byte header
                             monoImg.SetResolution(203, 203);
                             monoImg.Save(ms, ImageFormat.Bmp);
-                            SaveImg(monoImg, filename);
+                            //SaveImg(monoImg, filename);
                             return ms.ToArray();
                         }
                     }
@@ -79,23 +80,54 @@ namespace LabelPrint
             }
         }
 
-        private static void SaveImg(Bitmap bmp, string filename)
-        {
-            string path = $@"{AppContext.BaseDirectory}imgs";
+        //private static void SaveImg(Bitmap bmp, string filename)
+        //{
+        //    string path = $@"{AppContext.BaseDirectory}imgs";
 
+        //    try
+        //    {
+        //        if (!Directory.Exists(path))
+        //            Directory.CreateDirectory(path);
+
+        //        path = $"{path}\\{filename}.bmp";
+
+        //        if (File.Exists(path))
+        //            File.Delete(path);
+
+        //        bmp.Save($@"imgs/{filename}.bmp", ImageFormat.Bmp);
+        //    }
+        //    catch (Exception ex) { MessageBox.Show(ex.Message); }
+        //}
+
+        public static byte[] ConvertImageUploadCommandToSaveable(byte[] header, byte[] body)
+        {
+            byte[] newBody = Encoding.Default.GetBytes(BitConverter.ToString(body).Replace("-", ""));
+
+            byte[] returns = new byte[header.Length + newBody.Length];
+            Buffer.BlockCopy(header, 0, returns, 0, header.Length);
+            Buffer.BlockCopy(newBody, 0, returns, header.Length, newBody.Length);
+
+            return returns;
+        }
+
+        public static bool SaveCommand(string path, string filename, byte[] commandHeader, byte[] commandBody)
+        {
             try
             {
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
 
-                path = $"{path}\\{filename}.bmp";
+                path = $"{path}\\{filename}.txt";
 
                 if (File.Exists(path))
                     File.Delete(path);
 
-                bmp.Save($@"imgs/{filename}.bmp", ImageFormat.Bmp);
+
+                File.WriteAllText(path, Encoding.Default.GetString(ConvertImageUploadCommandToSaveable(commandHeader, commandBody)));
+
+                return true;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); return false; }
         }
 
         #region Config file

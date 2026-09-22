@@ -52,6 +52,7 @@ namespace LabelPrint
             toolTip1 = new ToolTip(components);
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             panel2 = new Panel();
+            L_ConnectionStatus = new Label();
             ((System.ComponentModel.ISupportInitialize)NUD_Port).BeginInit();
             menuStrip1.SuspendLayout();
             menuStrip2.SuspendLayout();
@@ -64,7 +65,7 @@ namespace LabelPrint
             // 
             L_IP.Anchor = AnchorStyles.Top;
             L_IP.AutoSize = true;
-            L_IP.Location = new Point(57, 49);
+            L_IP.Location = new Point(57, 56);
             L_IP.Name = "L_IP";
             L_IP.Size = new Size(60, 15);
             L_IP.TabIndex = 0;
@@ -74,7 +75,7 @@ namespace LabelPrint
             // 
             L_Port.Anchor = AnchorStyles.Top;
             L_Port.AutoSize = true;
-            L_Port.Location = new Point(195, 49);
+            L_Port.Location = new Point(195, 56);
             L_Port.Name = "L_Port";
             L_Port.Size = new Size(29, 15);
             L_Port.TabIndex = 1;
@@ -83,7 +84,7 @@ namespace LabelPrint
             // TB_IP
             // 
             TB_IP.Anchor = AnchorStyles.Top;
-            TB_IP.Location = new Point(57, 67);
+            TB_IP.Location = new Point(57, 74);
             TB_IP.Name = "TB_IP";
             TB_IP.Size = new Size(100, 23);
             TB_IP.TabIndex = 3;
@@ -91,7 +92,7 @@ namespace LabelPrint
             // BTN_Connect
             // 
             BTN_Connect.Anchor = AnchorStyles.Top;
-            BTN_Connect.Location = new Point(138, 105);
+            BTN_Connect.Location = new Point(138, 112);
             BTN_Connect.Name = "BTN_Connect";
             BTN_Connect.Size = new Size(75, 23);
             BTN_Connect.TabIndex = 2;
@@ -102,7 +103,7 @@ namespace LabelPrint
             // NUD_Port
             // 
             NUD_Port.Anchor = AnchorStyles.Top;
-            NUD_Port.Location = new Point(195, 67);
+            NUD_Port.Location = new Point(195, 74);
             NUD_Port.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
             NUD_Port.Name = "NUD_Port";
             NUD_Port.Size = new Size(99, 23);
@@ -111,7 +112,7 @@ namespace LabelPrint
             // L_Data
             // 
             L_Data.AutoSize = true;
-            L_Data.Location = new Point(58, 158);
+            L_Data.Location = new Point(58, 165);
             L_Data.Name = "L_Data";
             L_Data.Size = new Size(170, 15);
             L_Data.TabIndex = 6;
@@ -173,7 +174,7 @@ namespace LabelPrint
             // BTN_Send
             // 
             BTN_Send.Anchor = AnchorStyles.Bottom;
-            BTN_Send.Location = new Point(57, 386);
+            BTN_Send.Location = new Point(57, 393);
             BTN_Send.Name = "BTN_Send";
             BTN_Send.Size = new Size(100, 23);
             BTN_Send.TabIndex = 7;
@@ -184,7 +185,7 @@ namespace LabelPrint
             // BTN_ConnectSend
             // 
             BTN_ConnectSend.Anchor = AnchorStyles.Bottom;
-            BTN_ConnectSend.Location = new Point(177, 386);
+            BTN_ConnectSend.Location = new Point(177, 393);
             BTN_ConnectSend.Name = "BTN_ConnectSend";
             BTN_ConnectSend.Size = new Size(118, 23);
             BTN_ConnectSend.TabIndex = 8;
@@ -195,7 +196,7 @@ namespace LabelPrint
             // BTN_Close
             // 
             BTN_Close.Anchor = AnchorStyles.Bottom;
-            BTN_Close.Location = new Point(108, 415);
+            BTN_Close.Location = new Point(108, 422);
             BTN_Close.Name = "BTN_Close";
             BTN_Close.Size = new Size(119, 23);
             BTN_Close.TabIndex = 9;
@@ -206,7 +207,6 @@ namespace LabelPrint
             // openFileDialog1
             // 
             openFileDialog1.DefaultExt = "cmd";
-            openFileDialog1.FileName = "openFileDialog1";
             openFileDialog1.Filter = "Text files (*.txt;*.cmd)|*.txt;*.cmd|All files (*.*)|*.*";
             // 
             // toolStripContainer1
@@ -217,7 +217,7 @@ namespace LabelPrint
             // 
             toolStripContainer1.ContentPanel.Controls.Add(RTB_Data);
             toolStripContainer1.ContentPanel.Size = new Size(237, 179);
-            toolStripContainer1.Location = new Point(57, 177);
+            toolStripContainer1.Location = new Point(57, 184);
             toolStripContainer1.Name = "toolStripContainer1";
             toolStripContainer1.Size = new Size(237, 203);
             toolStripContainer1.TabIndex = 14;
@@ -231,7 +231,7 @@ namespace LabelPrint
             // 
             panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.BorderStyle = BorderStyle.FixedSingle;
-            panel1.Location = new Point(56, 176);
+            panel1.Location = new Point(56, 183);
             panel1.Name = "panel1";
             panel1.Size = new Size(239, 205);
             panel1.TabIndex = 15;
@@ -240,10 +240,22 @@ namespace LabelPrint
             // 
             panel2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             panel2.BorderStyle = BorderStyle.FixedSingle;
-            panel2.Location = new Point(56, 200);
+            panel2.Location = new Point(56, 207);
             panel2.Name = "panel2";
             panel2.Size = new Size(238, 1);
             panel2.TabIndex = 16;
+            // 
+            // L_ConnectionStatus
+            // 
+            L_ConnectionStatus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            L_ConnectionStatus.AutoSize = true;
+            L_ConnectionStatus.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            L_ConnectionStatus.ForeColor = Color.DarkRed;
+            L_ConnectionStatus.Location = new Point(266, 24);
+            L_ConnectionStatus.Name = "L_ConnectionStatus";
+            L_ConnectionStatus.Size = new Size(98, 19);
+            L_ConnectionStatus.TabIndex = 17;
+            L_ConnectionStatus.Text = "Disconnected";
             // 
             // Form1
             // 
@@ -251,6 +263,7 @@ namespace LabelPrint
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(364, 461);
+            Controls.Add(L_ConnectionStatus);
             Controls.Add(panel2);
             Controls.Add(toolStripContainer1);
             Controls.Add(menuStrip1);
@@ -306,5 +319,6 @@ namespace LabelPrint
         private ToolTip toolTip1;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private Panel panel2;
+        private Label L_ConnectionStatus;
     }
 }

@@ -35,6 +35,13 @@
             openFileDialog1 = new OpenFileDialog();
             BTN_OpenFileWizard = new Button();
             BTN_AddImg = new Button();
+            L_Width = new Label();
+            L_Height = new Label();
+            MIRV_Preview = new MmImageRulerViewer();
+            NUD_Width = new NumericUpDown();
+            NUD_Height = new NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)NUD_Width).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)NUD_Height).BeginInit();
             SuspendLayout();
             // 
             // L_Name
@@ -70,11 +77,11 @@
             TB_Path.Name = "TB_Path";
             TB_Path.Size = new Size(285, 23);
             TB_Path.TabIndex = 3;
+            TB_Path.Leave += TB_Path_Leave;
             // 
             // openFileDialog1
             // 
             openFileDialog1.DefaultExt = "png";
-            openFileDialog1.FileName = "openFileDialog1";
             openFileDialog1.Filter = "Image Files(*.BMP;*.GIF;*.EXIF;*.JPG;*.PNG;*.TIFF)|*.BMP;*.GIF;*.EXIF;*.JPG;*.PNG;*.TIFF";
             // 
             // BTN_OpenFileWizard
@@ -102,20 +109,79 @@
             BTN_AddImg.UseVisualStyleBackColor = true;
             BTN_AddImg.Click += BTN_AddImg_Click;
             // 
+            // L_Width
+            // 
+            L_Width.AutoSize = true;
+            L_Width.Location = new Point(24, 195);
+            L_Width.Name = "L_Width";
+            L_Width.Size = new Size(72, 15);
+            L_Width.TabIndex = 0;
+            L_Width.Text = "Width (mm)";
+            // 
+            // L_Height
+            // 
+            L_Height.AutoSize = true;
+            L_Height.Location = new Point(203, 195);
+            L_Height.Name = "L_Height";
+            L_Height.Size = new Size(76, 15);
+            L_Height.TabIndex = 7;
+            L_Height.Text = "Height (mm)";
+            // 
+            // MIRV_Preview
+            // 
+            MIRV_Preview.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            MIRV_Preview.AutoScroll = true;
+            MIRV_Preview.BackColor = Color.FromArgb(240, 240, 240);
+            MIRV_Preview.Location = new Point(360, 30);
+            MIRV_Preview.Name = "MIRV_Preview";
+            MIRV_Preview.Size = new Size(210, 210);
+            MIRV_Preview.TabIndex = 8;
+            // 
+            // NUD_Width
+            // 
+            NUD_Width.DecimalPlaces = 2;
+            NUD_Width.Location = new Point(24, 213);
+            NUD_Width.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
+            NUD_Width.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
+            NUD_Width.Name = "NUD_Width";
+            NUD_Width.Size = new Size(120, 23);
+            NUD_Width.TabIndex = 9;
+            NUD_Width.Value = new decimal(new int[] { 1, 0, 0, 131072 });
+            NUD_Width.ValueChanged += NUD_Width_ValueChanged;
+            // 
+            // NUD_Height
+            // 
+            NUD_Height.DecimalPlaces = 2;
+            NUD_Height.Location = new Point(203, 213);
+            NUD_Height.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
+            NUD_Height.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
+            NUD_Height.Name = "NUD_Height";
+            NUD_Height.Size = new Size(120, 23);
+            NUD_Height.TabIndex = 10;
+            NUD_Height.Value = new decimal(new int[] { 1, 0, 0, 131072 });
+            NUD_Height.ValueChanged += NUD_Height_ValueChanged;
+            // 
             // Form3
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(364, 201);
+            ClientSize = new Size(581, 251);
+            Controls.Add(NUD_Height);
+            Controls.Add(NUD_Width);
+            Controls.Add(MIRV_Preview);
+            Controls.Add(L_Width);
+            Controls.Add(L_Height);
             Controls.Add(BTN_AddImg);
             Controls.Add(BTN_OpenFileWizard);
             Controls.Add(TB_Path);
             Controls.Add(L_Path);
             Controls.Add(TB_Name);
             Controls.Add(L_Name);
-            MinimumSize = new Size(380, 240);
+            MinimumSize = new Size(597, 290);
             Name = "Form3";
-            Text = "Form3";
+            Text = "Image upload";
+            ((System.ComponentModel.ISupportInitialize)NUD_Width).EndInit();
+            ((System.ComponentModel.ISupportInitialize)NUD_Height).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -129,5 +195,10 @@
         private OpenFileDialog openFileDialog1;
         private Button BTN_OpenFileWizard;
         private Button BTN_AddImg;
+        private Label L_Width;
+        private Label L_Height;
+        private MmImageRulerViewer MIRV_Preview;
+        private NumericUpDown NUD_Width;
+        private NumericUpDown NUD_Height;
     }
 }

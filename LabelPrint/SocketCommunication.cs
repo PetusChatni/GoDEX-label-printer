@@ -1,4 +1,5 @@
-﻿using System.Drawing.Imaging;
+﻿using System.Diagnostics.Eventing.Reader;
+using System.Drawing.Imaging;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -43,15 +44,22 @@ namespace LabelPrint
         /// <param name="printerOutput">Output of the command "~MDIR" that has been sen to the printer</param>
         /// <param name="updateDataGridView">If true, DGV_Files will be updated</param>
         /// <returns>List of files: [0] = filename, [1] = type, [2] = size</returns>
-        public static FileList? ProcessFiles(string printerOutput, ref DataGridView? DGV_Files, bool updateDataGridView = false)
+        public static FileList? ProcessFiles(string printerOutput, ref DataGridView? DGV_Files, bool updateDataGridView = false, Action? clearAction = null, Action<string[]>? addAction = null)
         {
             // Checks if output is valid
             if (printerOutput == null || printerOutput == "" || !printerOutput.Contains("\r\n") || printerOutput.IndexOf("\r\n") == printerOutput.LastIndexOf("\r\n"))
+            {
+                //MessageBox.Show("Invalid");
                 return null;
+            }
+
+            //MessageBox.Show($"got through null: {printerOutput}");
 
             // Cleans output and splits it to strings about files
             string cleanOutput = printerOutput.Substring(printerOutput.IndexOf("\r\n") + 2);
             cleanOutput = cleanOutput.Substring(0, cleanOutput.LastIndexOf("\r\n"));
+
+            //MessageBox.Show($"Displaying {cleanOutput}");
 
             string[] readyArr = cleanOutput.Split("\r\n");
 
@@ -60,10 +68,20 @@ namespace LabelPrint
             if (updateDataGridView && DGV_Files != null)
             {
                 // Prepares DGV_Files for new data
-                DGV_Files.ColumnHeadersVisible = true;
-
-                DGV_Files.Rows.Clear();
+                if (DGV_Files.InvokeRequired && clearAction != null)
+                {
+                    // Safely marshal the execution to the UI thread
+                    DGV_Files.BeginInvoke(clearAction);
+                }
+                else
+                {
+                    // Direct update if already on UI thread
+                    DGV_Files.ColumnHeadersVisible = true;
+                    DGV_Files.Rows.Clear();
+                }
             }
+
+            //MessageBox.Show("Displaying ... ");
 
             foreach (string file in readyArr)
             {
@@ -80,10 +98,21 @@ namespace LabelPrint
 
                 if (updateDataGridView)
                 {
-                    DGV_Files?.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
+                    //MessageBox.Show("Added");
+                    if (DGV_Files.InvokeRequired && addAction != null)
+                    {
+                        // Safely marshal the execution to the UI thread
+                        DGV_Files.BeginInvoke(new Action(() => addAction(data.ToArray())));
+                    }
+                    else
+                    {
+                        // Direct update if already on UI thread
+                        DGV_Files?.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
+                    }
                 }
             }
 
+            //MessageBox.Show("Returned");
             return returns;
         }
     }
@@ -173,23 +202,38 @@ namespace LabelPrint
         public static string CommunicateWithRemote(ref TcpClient socket, IPAddress ip, int port, byte[] commandToSend, bool shouldReceiveData = false)
         {
             Connect(ref socket, ip, port);
+            //if (socket != null && !socket.Connected)
+            //{
+            //    MessageBox.Show("disconnecteddddddd");
 
+            //}
+            //else if (socket == null)
+            //{
+            //    MessageBox.Show("null");
+            //    return "";
+            //}
             if (socket == null || !socket.Connected)
             {
+                MessageBox.Show("nah");
                 return "";
             }
 
             try
             {
+                MessageBox.Show($"Sending {Encoding.Default.GetString(commandToSend)}");
                 using (NetworkStream stream = socket.GetStream())
                 {
                     stream.Write(commandToSend, 0, commandToSend.Length);
                     stream.Flush();
 
                     if (!shouldReceiveData)
+                    {
+                        MessageBox.Show("Sent");
                         return "";
+                    }
 
                     System.Threading.Thread.Sleep(300);
+                    MessageBox.Show("Receiving");
 
                     StringBuilder response = new StringBuilder();
                     byte[] buffer = new byte[1024];
@@ -217,6 +261,7 @@ namespace LabelPrint
             return CommunicateWithRemote(ref socket, ip, port, commandToSend, shouldReceiveData);
         }
 
+        // Most difficult translation mb
         /// <summary>
         /// Sents image to the printer
         /// </summary>
@@ -226,33 +271,36 @@ namespace LabelPrint
         /// <param name="path">Path to the image on local PC</param>
         /// <param name="filename">New name for the image on the printer</param>
         /// <returns>Whether image was sent (true) or not (false)</returns>
-        public static bool AddImageToPrinter(ref TcpClient socket, IPAddress ip, int port, string path, string filename)
+        public static byte[] AddImageToPrinter(ref TcpClient socket, IPAddress ip, int port, string path, string filename, byte[] bytes)
         {
             // Translates the file into byte array
-            byte[] bytes = FileHandler.GetImageBytes(path, filename);
-            if (bytes.Length < 1)
-            {
-                MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return false;
-            }
+            //byte[] bytes = FileHandler.GetImageBytes(path, filename);
+            //if (bytes.Length < 1)
+            //{
+            //    MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            //    return false;
+            //}
 
-            DataGridView? fn = null;
+            //DataGridView? fn = null;
 
+            // <MIGRATION>
             // Checks if file with provided filename already exists
-            if (SocketCommunicationTranslator.ProcessFiles(CommunicateWithRemote(ref socket, ip, port,
-                Encoding.Default.GetBytes("~MDIR\r\n"), true), ref fn)?.ContainsFilename(filename) == true)
-            {
-                // Asks user whether they would like to delete the existing file, and does so if user agrees
-                if (MessageBox.Show($"File with name: {filename} already exists. Would you like to delete the existing file?",
-                "Filename conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                {
-                    CommunicateWithRemote(ref socket, ip, port, Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
-                }
-                else
-                {
-                    return false;
-                }
-            }
+            // Split the function
+            //if (SocketCommunicationTranslator.ProcessFiles(CommunicateWithRemote(ref socket, ip, port,
+            //    Encoding.Default.GetBytes("~MDIR\r\n"), true), ref fn)?.ContainsFilename(filename) == true)
+            //{
+            //    // Asks user whether they would like to delete the existing file, and does so if user agrees
+            //    if (MessageBox.Show($"File with name: {filename} already exists. Would you like to delete the existing file?",
+            //    "Filename conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            //    {
+            //        CommunicateWithRemote(ref socket, ip, port, Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
+            //    }
+            //    else
+            //    {
+            //        return false;
+            //    }
+            //}
+            // </MIGRATION>
 
             // Command for image upload
             byte[] commandHeader = Encoding.Default.GetBytes($"~Eb,{filename},{bytes.Length}\r\n");
@@ -262,14 +310,20 @@ namespace LabelPrint
             Buffer.BlockCopy(commandHeader, 0, command, 0, commandHeader.Length);
             Buffer.BlockCopy(bytes, 0, command, commandHeader.Length, bytes.Length);
 
-            CommunicateWithRemote(ref socket, ip, port, command);
-            return true;
+            // Saves command as .txt
+            string pathImg = $@"{AppContext.BaseDirectory}imgs";
+
+            byte[] saveCommandHeader = Encoding.Default.GetBytes($"~Eb,{filename},{bytes.Length}\\r\\n");
+
+            FileHandler.SaveCommand(pathImg, filename, saveCommandHeader, bytes);
+
+            return command;
         }
 
         // Non-static version
-        public bool AddImageToPrinter(ref TcpClient socket, string path, string filename)
+        public byte[] AddImageToPrinter(ref TcpClient socket, string path, string filename, byte[] bytes)
         {
-            return AddImageToPrinter(ref socket, ip, port, path, filename);
+            return AddImageToPrinter(ref socket, ip, port, path, filename, bytes);
         }
         #endregion
     }

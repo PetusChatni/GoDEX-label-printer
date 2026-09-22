@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Sockets;
+
 namespace LabelPrint
 {
     internal static class Program
@@ -12,18 +15,7 @@ namespace LabelPrint
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
-            // Tries to load configuration (ip & port)
-            Config? config = FileHandler.LoadConfig();
-
-            if (config != null)
-            {
-                Config newConfig = (Config)config;
-                Application.Run(new Form1(newConfig.IP, newConfig.Port));
-            }
-            else
-            {
-                Application.Run(new Form1());
-            }
+            ProgramRuntime pr = new ProgramRuntime();
         }
     }
 }

@@ -1,3 +1,5 @@
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,7 +15,13 @@ namespace LabelPrint
         private int printerPort;
         private string data;
 
-        Form2 form2;
+        public event EventHandler<ConnectedEventArgs>? Connected;
+        public event EventHandler<CreatedForm2EventArgs>? Form2Created;
+        public event EventHandler<RequestMonitoringStateChangeEventArgs>? RequestedMonitoringStateChange;
+        public event EventHandler<byte[]> SendData;
+
+        private Form2 form2;
+
         public Form1()
         {
             InitializeComponent();
@@ -30,6 +38,29 @@ namespace LabelPrint
                 NUD_Port.Value = (decimal)port;
         }
 
+        private void OnConnected()
+        {
+            //ConnectionStatusChanged(this, new StatusChangeEventArgs(true, "standard connect"));
+
+            Connected?.Invoke(this, new ConnectedEventArgs(printerIP, printerPort, printerSocket));
+            //MessageBox.Show($"Form1.cs; 46; Connnected event fired");
+        }
+
+        private void OnForm2Created()
+        {
+            Form2Created?.Invoke(this, new CreatedForm2EventArgs(ref form2));
+        }
+
+        private void OnRequestMonitoringStateChange(bool newMonitoringState)
+        {
+            RequestedMonitoringStateChange?.Invoke(this, new RequestMonitoringStateChangeEventArgs(newMonitoringState, ref printerSocket));
+        }
+
+        private void OnSendData(byte[] commandToSend)
+        {
+            SendData?.Invoke(this, commandToSend);
+        }
+
         #region Wrapper functions for SocketCommunnnicationHandler
         /// <summary>
         /// Tries to establish connection with a printer
@@ -41,15 +72,23 @@ namespace LabelPrint
         {
             // Checks if printer is already connected to the PC
             if (printerSocket != null && printerSocket.Connected)
+            {
                 return;
+            }
 
             // Checks IP & Port inputs
             if (!FieldChecker.CheckIPInput(TB_IP.Text, out printerIP) |
                 !FieldChecker.CheckPort(NUD_Port.Value, out printerPort))
+            {
                 return;
+            }
 
             // Connects to the printer
-            SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort, true, printSuccessMsg, printFailMsg);
+            if (SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort, true, printSuccessMsg, printFailMsg))
+            {
+                OnConnected();
+            }
+
             socketComHandler = new SocketCommunicationHandler(printerIP, printerPort);
         }
 
@@ -71,14 +110,47 @@ namespace LabelPrint
                 return;
 
             // Needed for printer to print labels
-            if (!data.EndsWith("\r\n"))
+            string strippedData = data.Replace(" ", "");
+            if (!data.EndsWith("\r\n") && !strippedData.StartsWith("~E"))
+            {
                 data += "\r\n";
+                MessageBox.Show(data);
+            }
+            else if (strippedData.StartsWith("~E") && data.Split("\\r\\n").Length == 2)
+            {
+                byte[] header = Encoding.Default.GetBytes(data.Split("\\r\\n")[0]+"\r\n");
+
+                string bodyHex = data.Split("\\r\\n")[1];
+                
+                byte[] body = new byte[bodyHex.Length / 2];
+                for (int i = 0; i < bodyHex.Length; i += 2)
+                    body[i / 2] = Convert.ToByte(bodyHex.Substring(i, 2), 16);
+
+                byte[] command = new byte[header.Length + body.Length];
+                Buffer.BlockCopy(header, 0, command, 0, header.Length);
+                Buffer.BlockCopy(body, 0, command, header.Length, body.Length);
+
+
+                OnSendData(command);
+                //OnRequestMonitoringStateChange(false);
+                //if (socketComHandler != null)
+                //    socketComHandler.CommunicateWithRemote(ref printerSocket, command);
+                //else
+                //    SocketCommunicationHandler.CommunicateWithRemote(ref printerSocket, printerIP, printerPort, command);
+                //OnRequestMonitoringStateChange(true);
+
+                return;
+            }
+
+            OnSendData(Encoding.Default.GetBytes(data));
 
             // Sends data to the printer
-            if (socketComHandler != null)
-                socketComHandler.CommunicateWithRemote(ref printerSocket, Encoding.Default.GetBytes(data));
-            else
-                SocketCommunicationHandler.CommunicateWithRemote(ref printerSocket, printerIP, printerPort, Encoding.Default.GetBytes(data));
+            //OnRequestMonitoringStateChange(false);
+            //if (socketComHandler != null)
+            //    socketComHandler.CommunicateWithRemote(ref printerSocket, Encoding.Default.GetBytes(data));
+            //else
+            //    SocketCommunicationHandler.CommunicateWithRemote(ref printerSocket, printerIP, printerPort, Encoding.Default.GetBytes(data));
+            //OnRequestMonitoringStateChange(true);
         }
         #endregion
 
@@ -107,7 +179,10 @@ namespace LabelPrint
         private void BTN_Close_Click(object sender, EventArgs e)
         {
             if (printerSocket != null)
+            {
+                ConnectionStatusChanged(this, new StatusChangeEventArgs(false, "standard disconnect"));
                 printerSocket.Close();
+            }
         }
 
         /// <summary>
@@ -139,11 +214,15 @@ namespace LabelPrint
                 MessageBox.Show("Firstly, connect to the printer.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            else
-                printerSocket.Close();
+            //else
+            //    printerSocket.Close();
 
             // Creates form if it's null
-            form2 ??= new Form2(printerIP, printerPort);
+            if (form2 == null)
+            {
+                form2 = new Form2(this, printerIP, printerPort);
+                OnForm2Created();
+            }
 
             form2.Show();
             form2.VisibleChanged += Loaded;
@@ -163,7 +242,9 @@ namespace LabelPrint
             Show();
             try
             {
-                SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort);
+                if ((printerSocket == null || !printerSocket.Connected) && form2.IsConnected)
+                    ConnectToPrinter(false, false);
+                    //SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort);
             }
             catch { }
         }
@@ -203,6 +284,45 @@ namespace LabelPrint
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
                 FileHandler.ReadFileToRTB(openFileDialog1.FileName, ref RTB_Data);
         }
+
+        /// <summary>
+        /// Changes L_ConnectionStatus text & color
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void ConnectionStatusChanged(object? sender, StatusChangeEventArgs e)
+        {
+            // Check if the current thread is NOT the main UI thread
+            if (L_ConnectionStatus.InvokeRequired)
+            {
+                // Safely marshal the execution to the UI thread
+                L_ConnectionStatus.BeginInvoke(new Action(() =>
+                {
+                    L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
+                    L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
+                }));
+            }
+            else
+            {
+                // Direct update if already on UI thread
+                L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
+                L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
+            }
+
+            //if (e.IsConnected)
+            //{
+            //    L_ConnectionStatus.Text = "Connected";
+            //    L_ConnectionStatus.ForeColor = Color.ForestGreen;
+            //}
+            //else
+            //{
+            //    L_ConnectionStatus.Text = "Disconnected";
+            //    L_ConnectionStatus.ForeColor = Color.DarkRed;
+            //}
+        }
         #endregion
+
+        public ref Form2 Form2 { get { return ref form2; } }
+        public ref TcpClient PrinterSocket { get { return ref printerSocket; } }
     }
 }

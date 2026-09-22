@@ -40,6 +40,7 @@ namespace LabelPrint
             menuStrip1 = new MenuStrip();
             homeToolStripMenuItem = new ToolStripMenuItem();
             printerMemoryManagerToolStripMenuItem = new ToolStripMenuItem();
+            L_ConnectionStatus = new Label();
             ((System.ComponentModel.ISupportInitialize)DGV_Files).BeginInit();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -126,11 +127,26 @@ namespace LabelPrint
             printerMemoryManagerToolStripMenuItem.Size = new Size(152, 20);
             printerMemoryManagerToolStripMenuItem.Text = "Printer Memory Manager";
             // 
+            // L_ConnectionStatus
+            // 
+            L_ConnectionStatus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            L_ConnectionStatus.AutoSize = true;
+            L_ConnectionStatus.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            L_ConnectionStatus.ForeColor = Color.ForestGreen;
+            L_ConnectionStatus.Location = new Point(368, 24);
+            L_ConnectionStatus.Name = "L_ConnectionStatus";
+            L_ConnectionStatus.RightToLeft = RightToLeft.No;
+            L_ConnectionStatus.Size = new Size(80, 19);
+            L_ConnectionStatus.TabIndex = 6;
+            L_ConnectionStatus.Text = "Connected";
+            L_ConnectionStatus.TextAlign = ContentAlignment.MiddleRight;
+            // 
             // Form2
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(466, 461);
+            Controls.Add(L_ConnectionStatus);
             Controls.Add(DGV_Files);
             Controls.Add(BTN_AddImg);
             Controls.Add(BTN_Retrieve);
@@ -159,5 +175,6 @@ namespace LabelPrint
         private MenuStrip menuStrip1;
         private ToolStripMenuItem homeToolStripMenuItem;
         private ToolStripMenuItem printerMemoryManagerToolStripMenuItem;
+        private Label L_ConnectionStatus;
     }
 }
