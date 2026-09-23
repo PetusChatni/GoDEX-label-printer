@@ -41,7 +41,7 @@
             DoubleBuffered = true;
             ResizeRedraw = true;
             BackColor = Color.FromArgb(240, 240, 240);
-            AutoScroll = true;
+            //AutoScroll = true;
         }
 
         #endregion

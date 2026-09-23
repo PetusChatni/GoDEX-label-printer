@@ -80,10 +80,10 @@ namespace LabelPrint
             form1.RequestedMonitoringStateChange += ChangeSocketMonitoring;
             form1.SendData += SendDataToPrinter;
 
-            //Application.Run(form1);
-            
+            Application.Run(form1);
+
             // DEBUG ONLY
-            Application.Run(new Form3());
+            //Application.Run(new Form3());
         }
 
         private void ConnectedToThePrinter(object? sender, ConnectedEventArgs e)
@@ -107,7 +107,7 @@ namespace LabelPrint
                         socketReadReceiver.StatusChanged += form1.Form2.ConnectionStatusChanged;
                 }
 
-                MessageBox.Show("PR; 107; Changing Monitoring State ... ");
+                //MessageBox.Show("PR; 107; Changing Monitoring State ... ");
 
                 ChangeSocketMonitoring(this, new RequestMonitoringStateChangeEventArgs(true, ref form1.PrinterSocket));
 
@@ -139,7 +139,7 @@ namespace LabelPrint
         {
             if (!e.ResumeMonitoring)
             {
-                MessageBox.Show("Canceled");
+                //MessageBox.Show("Canceled");
                 
                 lock (_stateLock)
                 {
@@ -155,7 +155,7 @@ namespace LabelPrint
             }
             else
             {
-                MessageBox.Show("Resumed");
+                //MessageBox.Show("Resumed");
 
                 lock (_stateLock)
                 {
@@ -177,7 +177,7 @@ namespace LabelPrint
                         catch (Exception ex)
                         {
                             IsMonitoring = false;
-                            MessageBox.Show($"PR; 163; Exception - SRR: {ex.Message}");
+                            //MessageBox.Show($"PR; 163; Exception - SRR: {ex.Message}");
                             socketReadReceiver.OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
                         }
                     }, cancelTokenSource.Token);

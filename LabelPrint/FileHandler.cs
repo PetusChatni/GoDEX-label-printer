@@ -127,7 +127,8 @@ namespace LabelPrint
 
                 return true;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); return false; }
+            catch { return false; }
+            //catch (Exception ex) { MessageBox.Show(ex.Message); return false; }
         }
 
         #region Config file

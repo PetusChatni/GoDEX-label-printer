@@ -38,6 +38,12 @@ namespace LabelPrint
                 return;
             }
 
+            //using (var ms = new MemoryStream())
+            //{
+            //    MIRV_Preview.Image.Save(ms, MIRV_Preview.Image.RawFormat);
+            //    //MessageBox.Show($"Size: {ms.ToArray().Length} b");
+            //}
+
             OnFormSubmitted(EventArgs.Empty);
         }
 
@@ -62,7 +68,7 @@ namespace LabelPrint
 
         private void UpdatePreview()
         {
-            MessageBox.Show("Called");
+            //MessageBox.Show("Called");
 
             try
             {
@@ -77,7 +83,7 @@ namespace LabelPrint
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Form3.cs; 80; {ex.Message}");
+                //MessageBox.Show($"Form3.cs; 80; {ex.Message}");
                 MIRV_Preview.ClearImage();
                 NUD_Width.Value = (decimal).01f;
                 NUD_Height.Value = (decimal).01f;
@@ -100,52 +106,6 @@ namespace LabelPrint
                 MIRV_Preview.SetImageScaleMm((float)NUD_Width.Value, (float)NUD_Height.Value);
         }
 
-        //private void DrawRulers(Graphics g, Rectangle imgRect)
-        //{
-        //    Pen tickPen = Pens.Black;
-        //    Font font = new Font("Arial", 7);
-        //    Brush textBrush = Brushes.Black;
-
-        //    int RulerThickness = 25;
-        //    int zoomFactor = 1;
-
-        //    // 203 DPI pixels per mm
-        //    float pixelsPerMm = (203f / 25.4f) * zoomFactor;
-
-        //    // --- Horizontal Ruler (Top) ---
-        //    g.DrawLine(tickPen, imgRect.Left, RulerThickness, imgRect.Right, RulerThickness);
-        //    for (float mm = 0; mm <= (PB_Preview.Image.Width / (203f / 25.4f)); mm += 5) // Tick every 5mm
-        //    {
-        //        float xPos = imgRect.Left + (mm * pixelsPerMm);
-        //        if (xPos > imgRect.Right) break;
-
-        //        int tickHeight = (mm % 10 == 0) ? 10 : 5; // Longer tick for every 10mm
-        //        g.DrawLine(tickPen, xPos, RulerThickness - tickHeight, xPos, RulerThickness);
-
-        //        if (mm % 10 == 0) // Label every 10mm (1cm)
-        //        {
-        //            g.DrawString($"{mm}", font, textBrush, xPos - 8, RulerThickness - 22);
-        //        }
-        //    }
-
-        //    // --- Vertical Ruler (Left) ---
-        //    g.DrawLine(tickPen, RulerThickness, imgRect.Top, RulerThickness, imgRect.Bottom);
-        //    for (float mm = 0; mm <= (PB_Preview.Image.Height / (203f / 25.4f)); mm += 5)
-        //    {
-        //        float yPos = imgRect.Top + (mm * pixelsPerMm);
-        //        if (yPos > imgRect.Bottom) break;
-
-        //        int tickWidth = (mm % 10 == 0) ? 10 : 5;
-        //        g.DrawLine(tickPen, RulerThickness - tickWidth, yPos, RulerThickness, yPos);
-
-        //        if (mm % 10 == 0)
-        //        {
-        //            // Draw vertical text or rotate for cleaner look, simplified here:
-        //            g.DrawString($"{mm}", font, textBrush, 2, yPos - 5);
-        //        }
-        //    }
-        //}
-
         #endregion
 
         #region Getters
@@ -165,5 +125,7 @@ namespace LabelPrint
             }
         }
         #endregion
+
+        public MmImageRulerViewer MIRV_PreviewImage { get { return MIRV_Preview; } }
     }
 }

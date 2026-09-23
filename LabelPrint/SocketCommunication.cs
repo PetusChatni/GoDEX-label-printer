@@ -214,13 +214,13 @@ namespace LabelPrint
             //}
             if (socket == null || !socket.Connected)
             {
-                MessageBox.Show("nah");
+                //MessageBox.Show("nah");
                 return "";
             }
 
             try
             {
-                MessageBox.Show($"Sending {Encoding.Default.GetString(commandToSend)}");
+                //MessageBox.Show($"Sending {Encoding.Default.GetString(commandToSend)}");
                 using (NetworkStream stream = socket.GetStream())
                 {
                     stream.Write(commandToSend, 0, commandToSend.Length);
@@ -228,12 +228,12 @@ namespace LabelPrint
 
                     if (!shouldReceiveData)
                     {
-                        MessageBox.Show("Sent");
+                        //MessageBox.Show("Sent");
                         return "";
                     }
 
                     System.Threading.Thread.Sleep(300);
-                    MessageBox.Show("Receiving");
+                    //MessageBox.Show("Receiving");
 
                     StringBuilder response = new StringBuilder();
                     byte[] buffer = new byte[1024];

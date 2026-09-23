@@ -114,7 +114,7 @@ namespace LabelPrint
             if (!data.EndsWith("\r\n") && !strippedData.StartsWith("~E"))
             {
                 data += "\r\n";
-                MessageBox.Show(data);
+                //MessageBox.Show(data);
             }
             else if (strippedData.StartsWith("~E") && data.Split("\\r\\n").Length == 2)
             {
@@ -308,17 +308,6 @@ namespace LabelPrint
                 L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
                 L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
             }
-
-            //if (e.IsConnected)
-            //{
-            //    L_ConnectionStatus.Text = "Connected";
-            //    L_ConnectionStatus.ForeColor = Color.ForestGreen;
-            //}
-            //else
-            //{
-            //    L_ConnectionStatus.Text = "Disconnected";
-            //    L_ConnectionStatus.ForeColor = Color.DarkRed;
-            //}
         }
         #endregion
 

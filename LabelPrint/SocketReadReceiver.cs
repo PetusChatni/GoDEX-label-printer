@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 
 namespace LabelPrint
@@ -55,8 +53,6 @@ namespace LabelPrint
         /// <returns></returns>
         public async Task MonitorSocketAsync(TcpClient socket, TimeSpan pingInterval, CancellationToken token)
         {
-            //MessageBox.Show("Launched");
-
             // Enable aggressive TCP Keep-Alive (.NET 5+)
             socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
             socket.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 1);     // Wait 1s before probing
@@ -155,7 +151,7 @@ namespace LabelPrint
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"SRR; 158; {ex.Message}");
+                //MessageBox.Show($"SRR; 158; {ex.Message}");
                 if (socket != null)
                     socket.Close();
                 OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
@@ -188,7 +184,7 @@ namespace LabelPrint
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"SRR; 191; {ex.Message}");
+                //MessageBox.Show($"SRR; 191; {ex.Message}");
             }
             finally
             {

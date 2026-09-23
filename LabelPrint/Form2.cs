@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Drawing.Imaging;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -81,6 +82,7 @@ namespace LabelPrint
             }
             else if (isReceivingData)
             {
+                //MessageBox.Show("Form2.cs; 85; Receiving check data");
                 if (SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files)?.ContainsFilename(filename) == true)
                 {
                     // Asks user whether they would like to delete the existing file, and does so if user agrees
@@ -96,6 +98,7 @@ namespace LabelPrint
                     }
                 }
 
+                //MessageBox.Show("Form2.cs; 85; Sending image ... ");
                 CommunicateWithPrinter(socketComHandler.AddImageToPrinter(ref parent.PrinterSocket, path, filename, imageBytes));
 
                 // Closes Form3
@@ -113,10 +116,6 @@ namespace LabelPrint
                     form3.Close();
                 }
             }
-            //else
-            //{
-            //    MessageBox.Show("Form2.cs; 116; Unhandled UpdateFiles option");
-            //}
 
             isReceivingData = false;
         }
@@ -139,10 +138,53 @@ namespace LabelPrint
             this.filename = filename;
             this.path = path;
 
-            imageBytes = FileHandler.GetImageBytes(path, filename);
-            if (imageBytes.Length < 1)
+            try
             {
-                MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                // Enable resizing
+                using (Bitmap original = new Bitmap(form3.MIRV_PreviewImage.Image))
+                {
+                    // Converts source image to 1-bit monochrome indexed bitmap
+                    using (Bitmap monoImg = original.Clone(
+                        new Rectangle(0, 0, original.Width, original.Height),
+                        PixelFormat.Format1bppIndexed))
+                    {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            // Returns full 1-bit BMP byte array with 54-byte header
+                            monoImg.SetResolution(203, 203);
+
+                            int translatedWidth = (int)((form3.MIRV_PreviewImage.MmWidth / 25.4f) * monoImg.HorizontalResolution);
+                            int translatedHeight = (int)((form3.MIRV_PreviewImage.MmHeight / 25.4f) * monoImg.VerticalResolution);
+
+                            // Create blank canvas
+                            Bitmap resizedImg = new Bitmap(translatedWidth, translatedHeight);
+                            Graphics gfx = Graphics.FromImage(resizedImg);
+
+                            gfx.DrawImage(monoImg, 0, 0, translatedWidth, translatedHeight);
+
+                            Bitmap send = resizedImg.Clone(new Rectangle(0, 0, resizedImg.Width, resizedImg.Height),
+                                PixelFormat.Format1bppIndexed);
+
+                            send.Save(ms, ImageFormat.Bmp);
+                            imageBytes = ms.ToArray();
+
+                            resizedImg.Dispose();
+                            send.Dispose();
+                        }
+                    }
+                }
+            }
+            catch { }
+            //catch (Exception ex) { MessageBox.Show($"Form2.cs; 152; {ex.Message}"); }
+
+            if (imageBytes == null || imageBytes.Length < 1)
+            {
+                MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            else if (imageBytes.Length > 512000)
+            {
+                MessageBox.Show($"Image disk size is larger than 512 kB. {imageBytes.Length}", "Image disk size (kB) error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -255,8 +297,8 @@ namespace LabelPrint
 
         public void ConnectionStatusChanged(object? sender, StatusChangeEventArgs e)
         {
-            if (!e.IsConnected)
-                MessageBox.Show("Disconnected");
+            //if (!e.IsConnected)
+                //MessageBox.Show("Disconnected");
 
             // Check if the current thread is NOT the main UI thread
             if (L_ConnectionStatus.InvokeRequired)
