@@ -78,7 +78,7 @@ namespace LabelPrint
             L_Port.Location = new Point(195, 56);
             L_Port.Name = "L_Port";
             L_Port.Size = new Size(29, 15);
-            L_Port.TabIndex = 1;
+            L_Port.TabIndex = 2;
             L_Port.Text = "Port";
             // 
             // TB_IP
@@ -87,7 +87,7 @@ namespace LabelPrint
             TB_IP.Location = new Point(57, 74);
             TB_IP.Name = "TB_IP";
             TB_IP.Size = new Size(100, 23);
-            TB_IP.TabIndex = 3;
+            TB_IP.TabIndex = 1;
             // 
             // BTN_Connect
             // 
@@ -95,7 +95,7 @@ namespace LabelPrint
             BTN_Connect.Location = new Point(138, 112);
             BTN_Connect.Name = "BTN_Connect";
             BTN_Connect.Size = new Size(75, 23);
-            BTN_Connect.TabIndex = 2;
+            BTN_Connect.TabIndex = 4;
             BTN_Connect.Text = "Connect";
             BTN_Connect.UseVisualStyleBackColor = true;
             BTN_Connect.Click += BTN_Connect_Click;
@@ -107,7 +107,7 @@ namespace LabelPrint
             NUD_Port.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
             NUD_Port.Name = "NUD_Port";
             NUD_Port.Size = new Size(99, 23);
-            NUD_Port.TabIndex = 10;
+            NUD_Port.TabIndex = 3;
             // 
             // L_Data
             // 
@@ -115,7 +115,7 @@ namespace LabelPrint
             L_Data.Location = new Point(58, 165);
             L_Data.Name = "L_Data";
             L_Data.Size = new Size(170, 15);
-            L_Data.TabIndex = 6;
+            L_Data.TabIndex = 5;
             L_Data.Text = "Data to print (in ezpl language)";
             // 
             // menuStrip1
@@ -124,7 +124,7 @@ namespace LabelPrint
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(364, 24);
-            menuStrip1.TabIndex = 13;
+            menuStrip1.TabIndex = 10;
             menuStrip1.Text = "menuStrip1";
             // 
             // printerMemoryManagerToolStripMenuItem1
@@ -147,7 +147,7 @@ namespace LabelPrint
             menuStrip2.Location = new Point(0, 0);
             menuStrip2.Name = "menuStrip2";
             menuStrip2.Size = new Size(237, 24);
-            menuStrip2.TabIndex = 0;
+            menuStrip2.TabIndex = 4;
             menuStrip2.Text = "menuStrip2";
             // 
             // importToolStripMenuItem
@@ -167,7 +167,7 @@ namespace LabelPrint
             RTB_Data.Location = new Point(-1, 0);
             RTB_Data.Name = "RTB_Data";
             RTB_Data.Size = new Size(239, 180);
-            RTB_Data.TabIndex = 5;
+            RTB_Data.TabIndex = 6;
             RTB_Data.Text = "";
             RTB_Data.DragDrop += RTB_Data_DragDrop;
             // 
@@ -212,6 +212,7 @@ namespace LabelPrint
             // toolStripContainer1
             // 
             toolStripContainer1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            toolStripContainer1.TabIndex = 6;
             // 
             // toolStripContainer1.ContentPanel
             // 
@@ -260,7 +261,7 @@ namespace LabelPrint
             L_ConnectionStatus.Location = new Point(254, 24);
             L_ConnectionStatus.Name = "L_ConnectionStatus";
             L_ConnectionStatus.Size = new Size(98, 19);
-            L_ConnectionStatus.TabIndex = 17;
+            L_ConnectionStatus.TabIndex = 11;
             L_ConnectionStatus.Text = "Disconnected";
             L_ConnectionStatus.TextAlign = ContentAlignment.MiddleRight;
             // 

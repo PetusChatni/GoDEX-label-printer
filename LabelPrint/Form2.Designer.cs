@@ -41,6 +41,7 @@ namespace LabelPrint
             homeToolStripMenuItem = new ToolStripMenuItem();
             printerMemoryManagerToolStripMenuItem = new ToolStripMenuItem();
             L_ConnectionStatus = new Label();
+            L_MemoryLeft = new Label();
             ((System.ComponentModel.ISupportInitialize)DGV_Files).BeginInit();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -60,7 +61,7 @@ namespace LabelPrint
             BTN_AddImg.Location = new Point(117, 27);
             BTN_AddImg.Name = "BTN_AddImg";
             BTN_AddImg.Size = new Size(97, 23);
-            BTN_AddImg.TabIndex = 2;
+            BTN_AddImg.TabIndex = 1;
             BTN_AddImg.Text = "Add Image File";
             BTN_AddImg.UseVisualStyleBackColor = true;
             BTN_AddImg.Click += BTN_AddImg_Click;
@@ -78,7 +79,7 @@ namespace LabelPrint
             DGV_Files.Name = "DGV_Files";
             DGV_Files.RowHeadersVisible = false;
             DGV_Files.Size = new Size(442, 383);
-            DGV_Files.TabIndex = 3;
+            DGV_Files.TabIndex = 2;
             DGV_Files.CellContentClick += DGV_Files_CellContentClick;
             // 
             // dataGridViewTextBoxColumn1
@@ -111,7 +112,7 @@ namespace LabelPrint
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(466, 24);
-            menuStrip1.TabIndex = 5;
+            menuStrip1.TabIndex = 3;
             menuStrip1.Text = "menuStrip1";
             // 
             // homeToolStripMenuItem
@@ -136,15 +137,26 @@ namespace LabelPrint
             L_ConnectionStatus.Name = "L_ConnectionStatus";
             L_ConnectionStatus.RightToLeft = RightToLeft.No;
             L_ConnectionStatus.Size = new Size(108, 19);
-            L_ConnectionStatus.TabIndex = 6;
+            L_ConnectionStatus.TabIndex = 4;
             L_ConnectionStatus.Text = "Connected";
             L_ConnectionStatus.TextAlign = ContentAlignment.MiddleRight;
+            // 
+            // L_MemoryLeft
+            // 
+            L_MemoryLeft.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            L_MemoryLeft.Location = new Point(310, 51);
+            L_MemoryLeft.Name = "L_MemoryLeft";
+            L_MemoryLeft.Size = new Size(144, 15);
+            L_MemoryLeft.TabIndex = 5;
+            L_MemoryLeft.Text = "";
+            L_MemoryLeft.TextAlign = ContentAlignment.MiddleRight;
             // 
             // Form2
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(466, 461);
+            Controls.Add(L_MemoryLeft);
             Controls.Add(L_ConnectionStatus);
             Controls.Add(DGV_Files);
             Controls.Add(BTN_AddImg);
@@ -175,5 +187,6 @@ namespace LabelPrint
         private ToolStripMenuItem homeToolStripMenuItem;
         private ToolStripMenuItem printerMemoryManagerToolStripMenuItem;
         private Label L_ConnectionStatus;
+        private Label L_MemoryLeft;
     }
 }

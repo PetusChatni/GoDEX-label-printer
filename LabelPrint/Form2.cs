@@ -13,8 +13,9 @@ namespace LabelPrint
         private bool isReceivingData = false;
         // Used when Form2 is hidden and Form1 is shown
         private bool isConnected;
-        //private bool updateDGVWithPrinterOutput = false;
+        private bool updateDGVWithPrinterOutput = false;
         private ExpectedReceivedInfoType expectedReceive = ExpectedReceivedInfoType.None;
+        private CancellationTokenSource ctk;
 
         public event EventHandler<byte[]> SendData;
 
@@ -23,6 +24,7 @@ namespace LabelPrint
             InitializeComponent();
 
             parent = form1;
+            ctk = new();
         }
 
         private void OnSendData(byte[] commandToSend)
@@ -30,7 +32,7 @@ namespace LabelPrint
             SendData?.Invoke(this, commandToSend);
         }
 
-        #region Wrapper functions for SocketCommunication
+        #region Event Subsctiption Functions
         /// <summary>
         /// Updates file list in DGV_Files
         /// </summary>
@@ -38,6 +40,7 @@ namespace LabelPrint
         {
             isReceivingData = true;
             expectedReceive = ExpectedReceivedInfoType.FileList;
+            updateDGVWithPrinterOutput = true;
 
             CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"));
         }
@@ -64,7 +67,9 @@ namespace LabelPrint
                         DGV_Files.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
                     }));
 
-                    break;
+                    expectedReceive = ExpectedReceivedInfoType.StatusInfo;
+
+                    return;
                 case ExpectedReceivedInfoType.CheckFileList:
                     if (SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files)?.ContainsFilename(filename) == true)
                     {
@@ -87,6 +92,20 @@ namespace LabelPrint
                 case ExpectedReceivedInfoType.StatusInfo:
                     if (printerOutput.EndsWith("KB free\r\n"))
                     {
+                        if (updateDGVWithPrinterOutput)
+                        {
+                            if (L_MemoryLeft.InvokeRequired)
+                                L_MemoryLeft.BeginInvoke(new Action (() => { L_MemoryLeft.Text = printerOutput; }));
+                            else
+                                L_MemoryLeft.Text = printerOutput;
+
+                            isReceivingData = false;
+                            updateDGVWithPrinterOutput = false;
+                            return;
+                        }
+
+                        MessageBox.Show("Here");
+
                         // Gets free memory amount in B
                         int bytesRemaining = -1;
 
@@ -115,6 +134,18 @@ namespace LabelPrint
 
                             CommunicateWithPrinter(command);
 
+                            Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await TimeoutAfterUpload(ctk.Token);
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show(ex.Message);
+                                }
+                            }, ctk.Token);
+
                             return;
                         }
 
@@ -122,6 +153,8 @@ namespace LabelPrint
                     }
                     else if (printerOutput == "00\r\n")
                     {
+                        ctk.Cancel();
+
                         // Closes Form3
                         CloseForm3();
 
@@ -197,7 +230,7 @@ namespace LabelPrint
                 MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            else if (imageBytes.Length > 512000)
+            else if (imageBytes.Length > 524288)
             {
                 MessageBox.Show($"Image disk size is larger than 512 kB. {imageBytes.Length}", "Image disk size (kB) error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -292,6 +325,7 @@ namespace LabelPrint
             DGV_Files.Rows.RemoveAt(e.RowIndex);
 
             CommunicateWithPrinter(Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
+            UpdateFiles();
         }
 
         /// <summary>
@@ -347,6 +381,9 @@ namespace LabelPrint
 
         public void CloseForm3()
         {
+            if (form3 == null)
+                return;
+
             if (form3.InvokeRequired)
             {
                 form3.BeginInvoke(new Action(() =>
@@ -360,6 +397,14 @@ namespace LabelPrint
                 form3.FormSubmitted -= UpdateFilesEventHandler;
                 form3.Close();
             }
+        }
+
+        public async Task TimeoutAfterUpload(CancellationToken ct)
+        {
+            await Task.Delay(15000);
+
+            if(!ct.IsCancellationRequested)
+                UpdateFiles("00\r\n");
         }
 
         public bool IsConnected { get { return isConnected; } }

@@ -53,11 +53,8 @@ namespace LabelPrint
                 {
                     int bytesRead = await socket.Client.ReceiveAsync(buffer, SocketFlags.None, token);
 
-                    //MessageBox.Show("SRR; 60; Continue travajon");
-
                     if (bytesRead == 0)
                     {
-                        //MessageBox.Show("SRR; 64; 0 bytes");
                         OnStatusChanged(new StatusChangeEventArgs(false, "Graceful Disconnect"));
                         break;
                     }
@@ -84,7 +81,7 @@ namespace LabelPrint
             }
             catch (Exception ex)
             {
-                //MessageBox.Show($"SRR; 158; {ex.Message}");
+                MessageBox.Show($"SRR; 158; {ex.Message}");
                 if (socket != null)
                     socket.Close();
                 OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));

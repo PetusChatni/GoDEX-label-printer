@@ -120,7 +120,7 @@
             L_Width.Location = new Point(24, 184);
             L_Width.Name = "L_Width";
             L_Width.Size = new Size(72, 15);
-            L_Width.TabIndex = 0;
+            L_Width.TabIndex = 6;
             L_Width.Text = "Width (mm)";
             // 
             // L_Height
@@ -129,7 +129,7 @@
             L_Height.Location = new Point(203, 184);
             L_Height.Name = "L_Height";
             L_Height.Size = new Size(76, 15);
-            L_Height.TabIndex = 7;
+            L_Height.TabIndex = 8;
             L_Height.Text = "Height (mm)";
             // 
             // MIRV_Preview
@@ -141,7 +141,7 @@
             MIRV_Preview.Location = new Point(360, 30);
             MIRV_Preview.Name = "MIRV_Preview";
             MIRV_Preview.Size = new Size(250, 250);
-            MIRV_Preview.TabIndex = 8;
+            MIRV_Preview.TabIndex = 12;
             MIRV_Preview.DPIUpdated += UpdateScaleFromMIRV;
             // 
             // NUD_Width
@@ -152,7 +152,7 @@
             NUD_Width.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
             NUD_Width.Name = "NUD_Width";
             NUD_Width.Size = new Size(120, 23);
-            NUD_Width.TabIndex = 9;
+            NUD_Width.TabIndex = 7;
             toolTip1.SetToolTip(NUD_Width, "0,01 - 1000");
             NUD_Width.Value = new decimal(new int[] { 1, 0, 0, 131072 });
             NUD_Width.ValueChanged += NUD_Width_ValueChanged;
@@ -165,7 +165,7 @@
             NUD_Height.Minimum = new decimal(new int[] { 1, 0, 0, 131072 });
             NUD_Height.Name = "NUD_Height";
             NUD_Height.Size = new Size(120, 23);
-            NUD_Height.TabIndex = 10;
+            NUD_Height.TabIndex = 9;
             toolTip1.SetToolTip(NUD_Height, "0,01 - 1000");
             NUD_Height.Value = new decimal(new int[] { 1, 0, 0, 131072 });
             NUD_Height.ValueChanged += NUD_Height_ValueChanged;
@@ -176,7 +176,7 @@
             L_DPI.Location = new Point(110, 239);
             L_DPI.Name = "L_DPI";
             L_DPI.Size = new Size(71, 15);
-            L_DPI.TabIndex = 11;
+            L_DPI.TabIndex = 10;
             L_DPI.Text = "Printer's DPI";
             // 
             // NUD_DPI
@@ -187,13 +187,13 @@
             NUD_DPI.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             NUD_DPI.Name = "NUD_DPI";
             NUD_DPI.Size = new Size(120, 23);
-            NUD_DPI.TabIndex = 12;
+            NUD_DPI.TabIndex = 11;
             toolTip1.SetToolTip(NUD_DPI, "Enter DPI that is used on your printer");
             NUD_DPI.Value = new decimal(new int[] { 203, 0, 0, 0 });
             NUD_DPI.ValueChanged += NUD_DPI_ValueChanged;
-            //
+            // 
             // toolTip1
-            //
+            // 
             toolTip1.AutoPopDelay = 5000;
             toolTip1.InitialDelay = 1000;
             toolTip1.ReshowDelay = 500;
