@@ -1,50 +1,32 @@
-﻿using System.Drawing.Imaging;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
+﻿using System.Text;
 
 namespace LabelPrint
 {
     public partial class Form2 : Form
     {
+        private Form1 parent;
         private Form3 form3;
 
-        //private TcpClient printerSocket;
-        private Form1 parent;
-        private SocketCommunicationHandler socketComHandler;
-
-        private IPAddress? printerIP;
-        private int printerPort;
-
-        private string path;
         private string filename;
         private byte[] imageBytes;
 
         private bool isReceivingData = false;
+        // Used when Form2 is hidden and Form1 is shown
         private bool isConnected;
-        private bool updateDGVWithPrinterOutput = false;
+        //private bool updateDGVWithPrinterOutput = false;
+        private ExpectedReceivedInfoType expectedReceive = ExpectedReceivedInfoType.None;
 
-        public event EventHandler<RequestMonitoringStateChangeEventArgs>? RequestedMonitoringStateChange;
         public event EventHandler<byte[]> SendData;
 
-        public Form2(Form1 form1, IPAddress? printerIP, int printerPort)
+        public Form2(Form1 form1)
         {
             InitializeComponent();
 
-            this.printerIP = printerIP;
-            this.printerPort = printerPort;
-            socketComHandler = new SocketCommunicationHandler(printerIP, printerPort);
             parent = form1;
-        }
-
-        private void OnRequestMonitoringStateChange(bool newMonitoringState)
-        {
-            RequestedMonitoringStateChange?.Invoke(this, new RequestMonitoringStateChangeEventArgs(newMonitoringState, ref parent.PrinterSocket));
         }
 
         private void OnSendData(byte[] commandToSend)
         {
-            //MessageBox.Show("Form2.cs; 46; Invoked SendData");
             SendData?.Invoke(this, commandToSend);
         }
 
@@ -55,22 +37,24 @@ namespace LabelPrint
         private void UpdateFiles()
         {
             isReceivingData = true;
+            expectedReceive = ExpectedReceivedInfoType.FileList;
 
-            //MessageBox.Show("Form2.cs; 57; In UpdateFiles()");
-
-            //SocketCommunicationTranslator.ProcessFiles(), ref DGV_Files, true);
-            updateDGVWithPrinterOutput = true;
             CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"));
         }
 
+        /// <summary>
+        /// Processes a list of files from printer as a string
+        /// </summary>
+        /// <param name="printerOutput">list of files from printer</param>
         public void UpdateFiles(string printerOutput)
         {
-            //MessageBox.Show("Form2.cs; 67; In UpdateFiles(string)");
+            if (!isReceivingData)
+                return;
 
-            if (isReceivingData && updateDGVWithPrinterOutput)
+            switch (expectedReceive)
             {
-                //MessageBox.Show("Form2.cs; 68; Here");
-                SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files, true, new Action(
+                case ExpectedReceivedInfoType.FileList:
+                    SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files, true, new Action(
                     () =>
                     {
                         DGV_Files.ColumnHeadersVisible = true;
@@ -79,45 +63,104 @@ namespace LabelPrint
                     {
                         DGV_Files.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
                     }));
-            }
-            else if (isReceivingData)
-            {
-                //MessageBox.Show("Form2.cs; 85; Receiving check data");
-                if (SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files)?.ContainsFilename(filename) == true)
-                {
-                    // Asks user whether they would like to delete the existing file, and does so if user agrees
-                    if (MessageBox.Show($"File with name: {filename} already exists. Would you like to delete the existing file?",
-                    "Filename conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+
+                    break;
+                case ExpectedReceivedInfoType.CheckFileList:
+                    if (SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files)?.ContainsFilename(filename) == true)
                     {
-                        CommunicateWithPrinter(Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
+                        // Asks user whether they would like to delete the existing file, and does so if user agrees
+                        if (MessageBox.Show($"File with name: {filename} already exists. Would you like to delete the existing file?",
+                        "Filename conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                        {
+                            CommunicateWithPrinter(Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
+                        }
+                        else
+                        {
+                            isReceivingData = false;
+                            return;
+                        }
                     }
-                    else
+
+                    expectedReceive = ExpectedReceivedInfoType.StatusInfo;
+
+                    return;
+                case ExpectedReceivedInfoType.StatusInfo:
+                    if (printerOutput.EndsWith("KB free\r\n"))
                     {
-                        isReceivingData = false;
+                        // Gets free memory amount in B
+                        int bytesRemaining = -1;
+
+                        string[] split = printerOutput.Split(" ");
+
+                        foreach (string el in split)
+                        {
+                            if (bytesRemaining == -1 && int.TryParse(el, out bytesRemaining)) { }
+                            else if (el.EndsWith("B"))
+                            {
+                                bytesRemaining *= el == "MB" ? 1000000 : el == "KB" ? 1000 : 1;
+                                break;
+                            }
+                        }
+
+                        if (imageBytes.Length <= bytesRemaining)
+                        {
+                            // Sends a bonus ~S,CHECK = waits for the printer to finish uploading image
+                            byte[] idk = SocketCommunicationTranslator.ConvertImageToPrinterCommand(filename, imageBytes);
+
+                            byte[] added = Encoding.Default.GetBytes("\r\n~S,CHECK\r\n");
+
+                            byte[] command = new byte[idk.Length + added.Length];
+                            Buffer.BlockCopy(idk, 0, command, 0, idk.Length);
+                            Buffer.BlockCopy(added, 0, command, idk.Length, added.Length);
+
+                            CommunicateWithPrinter(command);
+
+                            return;
+                        }
+
+                        MessageBox.Show("Image disk size exceeds printer's free memory.", "Image disk size error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    else if (printerOutput == "00\r\n")
+                    {
+                        // Closes Form3
+                        CloseForm3();
+
+                        UpdateFiles();
                         return;
                     }
-                }
 
-                //MessageBox.Show("Form2.cs; 85; Sending image ... ");
-                CommunicateWithPrinter(socketComHandler.AddImageToPrinter(ref parent.PrinterSocket, path, filename, imageBytes));
-
-                // Closes Form3
-                if (form3.InvokeRequired)
-                {
-                    form3.BeginInvoke(new Action(() =>
-                    {
-                        form3.FormSubmitted -= UpdateFilesEventHandler;
-                        form3.Close();
-                    }));
-                }
-                else
-                {
-                    form3.FormSubmitted -= UpdateFilesEventHandler;
-                    form3.Close();
-                }
+                    break;
             }
 
             isReceivingData = false;
+        }
+
+        /// <summary>
+        /// DEBUG ONLY
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public static string ReplaceCtrl(string s)
+        {
+            var sb = new StringBuilder();
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+
+                var isCtrl = char.IsControl(c);
+                var n = char.ConvertToUtf32(s, i);
+
+                if (isCtrl)
+                {
+                    sb.Append($"\\u{n:X4}");
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -128,54 +171,26 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void UpdateFilesEventHandler(object sender, EventArgs e)
         {
+            if (isReceivingData)
+                return;
+
             // Gets and checks data from Form3
-            string path = form3.Path;
             string filename = form3.FileName;
 
             if (filename == null || filename == "")
                 return;
 
             this.filename = filename;
-            this.path = path;
 
-            try
-            {
-                // Enable resizing
-                using (Bitmap original = new Bitmap(form3.MIRV_PreviewImage.Image))
-                {
-                    // Converts source image to 1-bit monochrome indexed bitmap
-                    using (Bitmap monoImg = original.Clone(
-                        new Rectangle(0, 0, original.Width, original.Height),
-                        PixelFormat.Format1bppIndexed))
-                    {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            // Returns full 1-bit BMP byte array with 54-byte header
-                            monoImg.SetResolution(203, 203);
+            // mm -> px
+            // px = (mm / 25.4) * dpi
 
-                            int translatedWidth = (int)((form3.MIRV_PreviewImage.MmWidth / 25.4f) * monoImg.HorizontalResolution);
-                            int translatedHeight = (int)((form3.MIRV_PreviewImage.MmHeight / 25.4f) * monoImg.VerticalResolution);
+            float[] size = form3.MIRV_PreviewImage.GetImageScaleMm();
 
-                            // Create blank canvas
-                            Bitmap resizedImg = new Bitmap(translatedWidth, translatedHeight);
-                            Graphics gfx = Graphics.FromImage(resizedImg);
+            float width = (size[0] / 25.4f) * form3.MIRV_PreviewImage.Image.HorizontalResolution;
+            float height = (size[1] / 25.4f) * form3.MIRV_PreviewImage.Image.VerticalResolution;
 
-                            gfx.DrawImage(monoImg, 0, 0, translatedWidth, translatedHeight);
-
-                            Bitmap send = resizedImg.Clone(new Rectangle(0, 0, resizedImg.Width, resizedImg.Height),
-                                PixelFormat.Format1bppIndexed);
-
-                            send.Save(ms, ImageFormat.Bmp);
-                            imageBytes = ms.ToArray();
-
-                            resizedImg.Dispose();
-                            send.Dispose();
-                        }
-                    }
-                }
-            }
-            catch { }
-            //catch (Exception ex) { MessageBox.Show($"Form2.cs; 152; {ex.Message}"); }
+            imageBytes = SocketCommunicationTranslator.ConvertImageIntoByteArray(form3.MIRV_PreviewImage.Image, width, height);
 
             if (imageBytes == null || imageBytes.Length < 1)
             {
@@ -189,7 +204,7 @@ namespace LabelPrint
             }
 
             isReceivingData = true;
-            updateDGVWithPrinterOutput = false;
+            expectedReceive = ExpectedReceivedInfoType.CheckFileList;
             CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"));
         }
 
@@ -230,6 +245,7 @@ namespace LabelPrint
             if (form3 == null)
                 form3 = new Form3();
                 form3.FormSubmitted += UpdateFilesEventHandler;
+
             form3.ShowDialog();
         }
         
@@ -253,7 +269,7 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void DGV_Files_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (!parent.PrinterSocket.Connected)
+            if (!parent.PrinterSocket.Connected || isReceivingData)
                 return;
 
             // Checks if the button was clicked
@@ -285,6 +301,9 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void homeToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (isReceivingData)
+                return;
+
             isConnected = parent.PrinterSocket == null ? false : parent.PrinterSocket.Connected;
             Visible = false;
         }
@@ -297,9 +316,6 @@ namespace LabelPrint
 
         public void ConnectionStatusChanged(object? sender, StatusChangeEventArgs e)
         {
-            //if (!e.IsConnected)
-                //MessageBox.Show("Disconnected");
-
             // Check if the current thread is NOT the main UI thread
             if (L_ConnectionStatus.InvokeRequired)
             {
@@ -308,6 +324,11 @@ namespace LabelPrint
                 {
                     L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
                     L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
+                    if (!e.IsConnected) 
+                    {
+                        isReceivingData = false;
+                        CloseForm3();
+                    }
                 }));
             }
             else
@@ -315,9 +336,31 @@ namespace LabelPrint
                 // Direct update if already on UI thread
                 L_ConnectionStatus.Text = e.IsConnected ? "Connected" : "Disconnected";
                 L_ConnectionStatus.ForeColor = e.IsConnected ? Color.ForestGreen : Color.DarkRed;
+                if (!e.IsConnected) 
+                { 
+                    isReceivingData = false;
+                    CloseForm3();
+                }
             }
         }
         #endregion
+
+        public void CloseForm3()
+        {
+            if (form3.InvokeRequired)
+            {
+                form3.BeginInvoke(new Action(() =>
+                {
+                    form3.FormSubmitted -= UpdateFilesEventHandler;
+                    form3.Close();
+                }));
+            }
+            else
+            {
+                form3.FormSubmitted -= UpdateFilesEventHandler;
+                form3.Close();
+            }
+        }
 
         public bool IsConnected { get { return isConnected; } }
     }

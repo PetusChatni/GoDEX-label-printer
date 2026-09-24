@@ -1,15 +1,11 @@
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace LabelPrint
 {
     public partial class Form1 : Form
     {
         private TcpClient printerSocket;
-        private SocketCommunicationHandler socketComHandler;
 
         private IPAddress? printerIP;
         private int printerPort;
@@ -17,7 +13,6 @@ namespace LabelPrint
 
         public event EventHandler<ConnectedEventArgs>? Connected;
         public event EventHandler<CreatedForm2EventArgs>? Form2Created;
-        public event EventHandler<RequestMonitoringStateChangeEventArgs>? RequestedMonitoringStateChange;
         public event EventHandler<byte[]> SendData;
 
         private Form2 form2;
@@ -40,20 +35,12 @@ namespace LabelPrint
 
         private void OnConnected()
         {
-            //ConnectionStatusChanged(this, new StatusChangeEventArgs(true, "standard connect"));
-
             Connected?.Invoke(this, new ConnectedEventArgs(printerIP, printerPort, printerSocket));
-            //MessageBox.Show($"Form1.cs; 46; Connnected event fired");
         }
 
         private void OnForm2Created()
         {
             Form2Created?.Invoke(this, new CreatedForm2EventArgs(ref form2));
-        }
-
-        private void OnRequestMonitoringStateChange(bool newMonitoringState)
-        {
-            RequestedMonitoringStateChange?.Invoke(this, new RequestMonitoringStateChangeEventArgs(newMonitoringState, ref printerSocket));
         }
 
         private void OnSendData(byte[] commandToSend)
@@ -88,8 +75,6 @@ namespace LabelPrint
             {
                 OnConnected();
             }
-
-            socketComHandler = new SocketCommunicationHandler(printerIP, printerPort);
         }
 
         /// <summary>
@@ -109,48 +94,7 @@ namespace LabelPrint
             if (!FieldChecker.CheckData(RTB_Data.Text, out data))
                 return;
 
-            // Needed for printer to print labels
-            string strippedData = data.Replace(" ", "");
-            if (!data.EndsWith("\r\n") && !strippedData.StartsWith("~E"))
-            {
-                data += "\r\n";
-                //MessageBox.Show(data);
-            }
-            else if (strippedData.StartsWith("~E") && data.Split("\\r\\n").Length == 2)
-            {
-                byte[] header = Encoding.Default.GetBytes(data.Split("\\r\\n")[0]+"\r\n");
-
-                string bodyHex = data.Split("\\r\\n")[1];
-                
-                byte[] body = new byte[bodyHex.Length / 2];
-                for (int i = 0; i < bodyHex.Length; i += 2)
-                    body[i / 2] = Convert.ToByte(bodyHex.Substring(i, 2), 16);
-
-                byte[] command = new byte[header.Length + body.Length];
-                Buffer.BlockCopy(header, 0, command, 0, header.Length);
-                Buffer.BlockCopy(body, 0, command, header.Length, body.Length);
-
-
-                OnSendData(command);
-                //OnRequestMonitoringStateChange(false);
-                //if (socketComHandler != null)
-                //    socketComHandler.CommunicateWithRemote(ref printerSocket, command);
-                //else
-                //    SocketCommunicationHandler.CommunicateWithRemote(ref printerSocket, printerIP, printerPort, command);
-                //OnRequestMonitoringStateChange(true);
-
-                return;
-            }
-
-            OnSendData(Encoding.Default.GetBytes(data));
-
-            // Sends data to the printer
-            //OnRequestMonitoringStateChange(false);
-            //if (socketComHandler != null)
-            //    socketComHandler.CommunicateWithRemote(ref printerSocket, Encoding.Default.GetBytes(data));
-            //else
-            //    SocketCommunicationHandler.CommunicateWithRemote(ref printerSocket, printerIP, printerPort, Encoding.Default.GetBytes(data));
-            //OnRequestMonitoringStateChange(true);
+            OnSendData(SocketCommunicationTranslator.ConvertDataIntoCommand(data.Replace(" ", "")));
         }
         #endregion
 
@@ -206,21 +150,19 @@ namespace LabelPrint
         private void BTN_OpenMemoryManager_Click(object sender, EventArgs e)
         {
             // Closes printer socket
-            if(printerIP != null)
-                SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort, false, false, false);
+            //if(printerIP != null)
+            //    SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort, false, false, false);
 
             if (printerSocket == null || !printerSocket.Connected)
             {
                 MessageBox.Show("Firstly, connect to the printer.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            //else
-            //    printerSocket.Close();
 
             // Creates form if it's null
             if (form2 == null)
             {
-                form2 = new Form2(this, printerIP, printerPort);
+                form2 = new Form2(this);
                 OnForm2Created();
             }
 
@@ -244,7 +186,6 @@ namespace LabelPrint
             {
                 if ((printerSocket == null || !printerSocket.Connected) && form2.IsConnected)
                     ConnectToPrinter(false, false);
-                    //SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort);
             }
             catch { }
         }

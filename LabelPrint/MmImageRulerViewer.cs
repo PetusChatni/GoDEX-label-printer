@@ -7,13 +7,24 @@ namespace LabelPrint
     {
         private Image originalImage;
         private Image _image;
-        private float _mmWidth = 100f;   // Desired width in millimeters
-        private float _mmHeight = 100f;  // Desired height in millimeters
+        private float _mmWidth = .01f;   // Desired width in millimeters
+        private float _mmHeight = .01f;  // Desired height in millimeters
+        private float dpi = 203;
         private const int RulerSize = 30; // Pixel size reserved for ruler bars
+        
+        /// <summary>
+        /// Display's horizontal dpi
+        /// </summary>
+        private float dpiY = 203;
 
-        private bool updateScrollBars = false;
+        public event EventHandler<EventArgs> DPIUpdated;
 
         public MmImageRulerViewer() { }
+
+        private void OnDPIUpdated()
+        {
+            DPIUpdated?.Invoke(this, new EventArgs());
+        }
 
         /// <summary>
         /// Deletes image from preview
@@ -38,38 +49,22 @@ namespace LabelPrint
                     new Rectangle(0, 0, original.Width, original.Height),
                     PixelFormat.Format1bppIndexed))
                 {
-                    monoImg.SetResolution(203, 203);
-                    _image = monoImg.Clone(new Rectangle(0, 0, original.Width, original.Height), 
-                        PixelFormat.Format1bppIndexed);
-                    originalImage = monoImg.Clone(new Rectangle(0, 0, original.Width, original.Height),
+                    monoImg.SetResolution(dpi, dpi);
+                    originalImage = _image = monoImg.Clone(new Rectangle(0, 0, original.Width, original.Height), 
                         PixelFormat.Format1bppIndexed);
 
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        // Scaling with the same proportions isn't working here
-                        monoImg.Save(ms, ImageFormat.Bmp);
-                        //MessageBox.Show($"MIRV; 47; {ms.ToArray().Length} b");
-                    }
+                    //pixelSize = new Size(originalImage.Width, originalImage.Height);
                 }
             }
-
-            //_image = Image.FromFile(filePath);
-
             // Convert natural pixel size to physical mm based on original DPI metadata
             _mmWidth = (_image.Width / _image.HorizontalResolution) * 25.4f;
             _mmHeight = (_image.Height / _image.VerticalResolution) * 25.4f;
 
-            //MessageBox.Show($"MIRV; 62;\n\nImage.Size: {_image.Size};\n_mmWidth: {_mmWidth};\n_mmHeight: {_mmHeight}");
-
-            //int translatedWidth = (int) ((_mmWidth / 25.4f) * _image.HorizontalResolution);
-            //int translatedHeight = (int) ((_mmHeight / 25.4f) * _image.VerticalResolution);
-
-            //MessageBox.Show($"MIRV; 67;\n\nImage.Size: {_image.Size};\ntranslatedWidth: {translatedWidth};\ntranslatedHeight: {translatedHeight}");
+            MessageBox.Show($"Size: {_image.Size}");
+            MessageBox.Show($"DPI: H:{_image.HorizontalResolution}; V:{_image.VerticalResolution}");
 
             UpdateScrollBounds();
             Invalidate();
-
-            updateScrollBars = true;
         }
 
         /// <summary>
@@ -94,6 +89,9 @@ namespace LabelPrint
             Invalidate();
         }
 
+        /// <summary>
+        /// Updates borders of the scroll zone (to which pixel value can user scroll)
+        /// </summary>
         private void UpdateScrollBounds()
         {
             using (Graphics g = CreateGraphics())
@@ -103,43 +101,72 @@ namespace LabelPrint
 
                 // Total scrollable area includes the image size plus ruler margins
                 int totalWidth = (int)(_mmWidth * pxPerMmX * 10) + RulerSize;
-                //MessageBox.Show($"Width: {totalWidth.ToString()}");
                 int totalHeight = (int)(_mmHeight * pxPerMmY * 10) + RulerSize;
-                //MessageBox.Show($"Height: {totalHeight.ToString()}");
 
                 AutoScrollMinSize = new Size(totalWidth, totalHeight);
 
-                //MessageBox.Show(AutoScrollMinSize.ToString());
-                //updateScrollBars = true;
                 PerformLayout();
                 Invalidate();
             }
         }
 
-        protected override void OnScroll(ScrollEventArgs se)
-        {
-            base.OnScroll(se);
-            Invalidate();
-        }
-
+        /// <summary>
+        /// Handles scrolling (vertically & horizontally) by mouse & touchpad
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnMouseWheel(MouseEventArgs e)
         {
-            if (_image != null && (int)_mmHeight >= Height - RulerSize)
+            if (_image != null && (int)_mmHeight * (dpiY / 25.4f) >= Height - RulerSize)
             {
-                base.OnMouseWheel(e);
+                // Suppress standard control wheel handling to prevent double-scrolling
+                if (e is HandledMouseEventArgs hme)
+                {
+                    hme.Handled = true;
+                }
+
+                // AutoScrollPosition getter returns negative values, so Math.Abs gets the positive pixel offset
+                int currentX = Math.Abs(AutoScrollPosition.X);
+                int currentY = Math.Abs(AutoScrollPosition.Y);
+
+                // e.Delta is positive (+120) when scrolling up/away, negative (-120) when scrolling down/towards
+                int scrollDelta = e.Delta;
+
+                if (ModifierKeys.HasFlag(Keys.Shift))
+                {
+                    // Shift + Mouse Wheel -> Horizontal Scrolling
+                    int newX = currentX - scrollDelta;
+                    AutoScrollPosition = new Point(newX, currentY);
+                }
+                else
+                {
+                    // Standard Mouse Wheel -> Vertical Scrolling
+                    int newY = currentY - scrollDelta;
+                    AutoScrollPosition = new Point(currentX, newY);
+                }
+
                 Invalidate();
             }
         }
 
+        /// <summary>
+        /// Does nothing -> screen doesn't flicker when scrolling
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnPaintBackground(PaintEventArgs e)
         {
             // Do nothing - background clearing is handled in OnPaint off-screen
         }
 
+        /// <summary>
+        /// Paints the whole control on screen
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
             Graphics g = e.Graphics;
+
+            dpiY = g.DpiY;
 
             g.Clear(BackColor);
 
@@ -150,14 +177,16 @@ namespace LabelPrint
             int scrollX = Math.Abs(AutoScrollPosition.X);
             int scrollY = Math.Abs(AutoScrollPosition.Y);
 
-            // Calculate screen pixels per centimeter for current monitor
+            // DPI is calculated wrong: bigger DPI -> smaller image
+            // Currently:               bigger DPI -> bigger image
+
+            // Calculate screen pixels per millimeter with constant (dpi is used in _mmWidth)
             float pxPerMmX = 203 / 25.4f * .05f;
             float pxPerMmY = 203 / 25.4f * .05f;
 
-            //MessageBox.Show(AutoScrollMinSize.ToString());
-
             // Convert target mm dimensions to pixel dimensions for drawing
-            float imgPxWidth = _mmWidth * pxPerMmX * 10;
+            // Error in calculations might be here
+            float imgPxWidth = _mmWidth * pxPerMmX * 10; // 254dpi, 100mm - 500 // 508dpi, 100mm - 
             float imgPxHeight = _mmHeight * pxPerMmY * 10;
 
             // 1. Draw Image (Anchored at top-left corner past the rulers)
@@ -172,40 +201,23 @@ namespace LabelPrint
                 RectangleF imageRect = new RectangleF(imgX, imgY, imgPxWidth, imgPxHeight);
 
                 g.DrawImage(_image, imageRect);
-
-                //RectangleF imageRect = new RectangleF(RulerSize, RulerSize, imgPxWidth, imgPxHeight);
-                //g.DrawImage(_image, imageRect);
-
-                // Optional: Draw border around image bounds
-                //using (Pen borderPen = new Pen(Color.Gray, 1))
-                //{
-                //    g.DrawRectangle(borderPen, imageRect.X, imageRect.Y, imageRect.Width, imageRect.Height);
-                //}
                 g.Clip = originalClip;
             }
 
             // 2. Draw Rulers
             DrawRulers(g, pxPerMmX, pxPerMmY, imgPxWidth, imgPxHeight, scrollX, scrollY);
-
-            //if (_image != null && updateScrollBars)
-            //{
-            //    // Total scrollable area includes the image size plus ruler margins
-            //    int totalWidth = (int)(_mmWidth * pxPerMmX * 10) + RulerSize;
-            //    //MessageBox.Show($"Width: {totalWidth.ToString()}");
-            //    int totalHeight = (int)(_mmHeight * pxPerMmY * 10) + RulerSize;
-            //    //MessageBox.Show($"Height: {totalHeight.ToString()}");
-
-            //    AutoScrollMinSize = new Size(totalWidth, totalHeight);
-            //    updateScrollBars = false;
-            //}
-
-            //if (updateScrollBars)
-            //{
-            //    MessageBox.Show(AutoScrollMinSize.ToString());
-            //}
         }
 
-        // Most problems here
+        /// <summary>
+        /// Draws mm rulers
+        /// </summary>
+        /// <param name="g">Control's graphics</param>
+        /// <param name="pxPerMmX">Pixels per mm horizontally</param>
+        /// <param name="pxPerMmY">Pixels per mm vertically</param>
+        /// <param name="imgPxWidth">Image width in pixels</param>
+        /// <param name="imgPxHeight">Image height in pixels</param>
+        /// <param name="scrollX">Horizontal scroll value in pixels</param>
+        /// <param name="scrollY">Vertical scroll value in pixels</param>
         private void DrawRulers(Graphics g, float pxPerMmX, float pxPerMmY, float imgPxWidth, float imgPxHeight, int scrollX, int scrollY)
         {
             using (SolidBrush rulerBg = new SolidBrush(Color.White))
@@ -222,36 +234,31 @@ namespace LabelPrint
 
                 // --- Horizontal Ruler (Top) ---
                 g.SetClip(new Rectangle(RulerSize, 0, Width - RulerSize, RulerSize));
-                //int maxMmX = (int)((Width - RulerSize) / pxPerMmX);
                 
                 // Start position in mm (0 - scroll in mm)
                 int startMmX = Math.Max(0, (int)(scrollX / pxPerMmX));
                 
                 // End position in mm (scroll in mm + clean width in mm)
-                int endMmX = (int)((scrollX + Width - RulerSize) / pxPerMmX); //  + 1
-
-                //MessageBox.Show(((Width - RulerSize) / pxPerMmX).ToString());
+                int endMmX = (int)((scrollX + Width - RulerSize) / pxPerMmX);
 
                 // Image width - Release version
                 int maxMmX = _image == null || (int)_mmWidth < Width - RulerSize ? endMmX : (int)_mmWidth;
-                
-                //int maxMmX = (int)_mmWidth;
 
                 // Starts at start pos, ends at end position or Image width - whatever is less
                 for (int mm = startMmX; mm <= Math.Min(endMmX, maxMmX) * 10; mm++)
                 {
                     float x = RulerSize + (mm * pxPerMmX) - scrollX;
 
-                    if (mm % 100 == 0) // Major tick (100mm)
+                    if (mm % 100 == 0) // Major tick (10mm)
                     {
                         g.DrawLine(linePen, x, 10, x, RulerSize);
                         g.DrawString((mm / 10).ToString(), textFont, textBrush, x + 1, 1);
                     }
-                    else if (mm % 50 == 0) // Medium tick (50mm)
+                    else if (mm % 50 == 0) // Medium tick (5mm)
                     {
                         g.DrawLine(linePen, x, 18, x, RulerSize);
                     }
-                    else if (mm % 10 == 0) // Minor tick (10mm)
+                    else if (mm % 10 == 0) // Minor tick (1mm)
                     {
                         g.DrawLine(linePen, x, 23, x, RulerSize);
                     }
@@ -262,12 +269,10 @@ namespace LabelPrint
                 g.SetClip(new Rectangle(0, RulerSize, RulerSize, Height - RulerSize));
 
                 int startMmY = Math.Max(0, (int)(scrollY / pxPerMmY));
-                int endMmY = (int)((scrollY + Height - RulerSize) / pxPerMmY); //  + 1
+                int endMmY = (int)((scrollY + Height - RulerSize) / pxPerMmY);
 
                 // Image Height - Release version
                 int maxMmY = _image == null || (int)_mmHeight < Height - RulerSize ? endMmY : (int)_mmHeight;
-
-                //int maxMmY = (int)_mmHeight;
 
                 for (int mm = startMmY; mm <= Math.Min(endMmY, maxMmY) * 10; mm++)
                 {
@@ -301,7 +306,9 @@ namespace LabelPrint
             }
         }
 
-        // 2. Enable OS-level composite double buffering
+        /// <summary>
+        /// Enables OS-level composite double buffering
+        /// </summary>
         protected override CreateParams CreateParams
         {
             get
@@ -318,5 +325,42 @@ namespace LabelPrint
 
         public float MmWidth { get { return _mmWidth; } }
         public float MmHeight { get { return _mmHeight; } }
+
+        /// <summary>
+        /// On set changes image dpi & its size
+        /// </summary>
+        public float DPI 
+        { 
+            get { return dpi; }
+            set
+            {
+                if (value > 0 && _image != null)
+                {
+                    // Makes new Size from current dimensions
+                    float[] newSizes = { (_mmWidth / 25.4f) * dpi, (_mmHeight / 25.4f) * dpi };
+
+                    dpi = value;
+
+                    // Applies DPI
+                    // Changes mm: px = (mm / 25.4) * dpi -> mm = (px / dpi) * 25.4
+                    _mmWidth = Math.Clamp((newSizes[0] / dpi) * 25.4f, 0.01f, 1000);
+                    _mmHeight = Math.Clamp((newSizes[1] / dpi) * 25.4f, 0.01f, 1000);
+
+                    using (Bitmap imageBM = (Bitmap)_image)
+                    {
+                        using (Bitmap changedDPI = new Bitmap(imageBM))
+                        {
+                            changedDPI.SetResolution(dpi, dpi);
+                            _image = changedDPI.Clone(new Rectangle(0, 0, changedDPI.Width, changedDPI.Height), PixelFormat.Format1bppIndexed);
+                        }
+                    }
+
+                    UpdateScrollBounds();
+                    Invalidate();
+
+                    OnDPIUpdated();
+                }
+            }
+        }
     }
 }

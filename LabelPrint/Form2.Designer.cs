@@ -130,13 +130,12 @@ namespace LabelPrint
             // L_ConnectionStatus
             // 
             L_ConnectionStatus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            L_ConnectionStatus.AutoSize = true;
             L_ConnectionStatus.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             L_ConnectionStatus.ForeColor = Color.ForestGreen;
-            L_ConnectionStatus.Location = new Point(368, 24);
+            L_ConnectionStatus.Location = new Point(346, 24);
             L_ConnectionStatus.Name = "L_ConnectionStatus";
             L_ConnectionStatus.RightToLeft = RightToLeft.No;
-            L_ConnectionStatus.Size = new Size(80, 19);
+            L_ConnectionStatus.Size = new Size(108, 19);
             L_ConnectionStatus.TabIndex = 6;
             L_ConnectionStatus.Text = "Connected";
             L_ConnectionStatus.TextAlign = ContentAlignment.MiddleRight;

@@ -43,6 +43,7 @@ namespace LabelPrint
             catch { return false; }
         }
 
+        #region Image
         /// <summary>
         /// Loads image and converts it into byte array
         /// </summary>
@@ -68,7 +69,6 @@ namespace LabelPrint
                             // Returns full 1-bit BMP byte array with 54-byte header
                             monoImg.SetResolution(203, 203);
                             monoImg.Save(ms, ImageFormat.Bmp);
-                            //SaveImg(monoImg, filename);
                             return ms.ToArray();
                         }
                     }
@@ -80,28 +80,17 @@ namespace LabelPrint
             }
         }
 
-        //private static void SaveImg(Bitmap bmp, string filename)
-        //{
-        //    string path = $@"{AppContext.BaseDirectory}imgs";
-
-        //    try
-        //    {
-        //        if (!Directory.Exists(path))
-        //            Directory.CreateDirectory(path);
-
-        //        path = $"{path}\\{filename}.bmp";
-
-        //        if (File.Exists(path))
-        //            File.Delete(path);
-
-        //        bmp.Save($@"imgs/{filename}.bmp", ImageFormat.Bmp);
-        //    }
-        //    catch (Exception ex) { MessageBox.Show(ex.Message); }
-        //}
-
+        /// <summary>
+        /// Converts image byte array in command's body to hex string
+        /// </summary>
+        /// <param name="header">Command's header (~E ...)</param>
+        /// <param name="body">Command's body = image</param>
+        /// <returns>Byte array with body written in hex</returns>
         public static byte[] ConvertImageUploadCommandToSaveable(byte[] header, byte[] body)
         {
+            // Coverts image bytes into hex string
             byte[] newBody = Encoding.Default.GetBytes(BitConverter.ToString(body).Replace("-", ""));
+
 
             byte[] returns = new byte[header.Length + newBody.Length];
             Buffer.BlockCopy(header, 0, returns, 0, header.Length);
@@ -110,7 +99,15 @@ namespace LabelPrint
             return returns;
         }
 
-        public static bool SaveCommand(string path, string filename, byte[] commandHeader, byte[] commandBody)
+        /// <summary>
+        /// Saves command with image as hex string
+        /// </summary>
+        /// <param name="path">Where command will be saved</param>
+        /// <param name="filename">Name under which command will be saved</param>
+        /// <param name="commandHeader">Command header</param>
+        /// <param name="commandBody">Command body</param>
+        /// <returns>Whether saving was successful or not</returns>
+        public static bool SaveImageUploadCommand(string path, string filename, byte[] commandHeader, byte[] commandBody)
         {
             try
             {
@@ -122,14 +119,43 @@ namespace LabelPrint
                 if (File.Exists(path))
                     File.Delete(path);
 
-
+                // Writes the whole command (header as string, body as hex string) to the text file
                 File.WriteAllText(path, Encoding.Default.GetString(ConvertImageUploadCommandToSaveable(commandHeader, commandBody)));
 
                 return true;
             }
             catch { return false; }
-            //catch (Exception ex) { MessageBox.Show(ex.Message); return false; }
         }
+
+        /// <summary>
+        /// Converts saved image command (hex) into printer ready command
+        /// </summary>
+        /// <param name="data">Command as string</param>
+        /// <returns>Printer ready command</returns>
+        public static byte[] LoadImageUploadCommand(string data)
+        {
+            // Returns if data isn't an image upload command
+            if (!data.StartsWith("~E") || data.Split("\\r\\n").Length != 2)
+                return [];
+
+            // Gets part with hex
+            byte[] header = Encoding.Default.GetBytes(data.Split("\\r\\n")[0] + "\r\n");
+
+            string bodyHex = data.Split("\\r\\n")[1];
+
+            // Translates hex into byte array
+            byte[] body = new byte[bodyHex.Length / 2];
+            for (int i = 0; i < bodyHex.Length; i += 2)
+                body[i / 2] = Convert.ToByte(bodyHex.Substring(i, 2), 16);
+
+            // Creates final command
+            byte[] command = new byte[header.Length + body.Length];
+            Buffer.BlockCopy(header, 0, command, 0, header.Length);
+            Buffer.BlockCopy(body, 0, command, header.Length, body.Length);
+
+            return command;
+        }
+        #endregion
 
         #region Config file
         /// <summary>

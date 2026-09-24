@@ -236,6 +236,13 @@ namespace LabelPrint
             panel1.Size = new Size(239, 205);
             panel1.TabIndex = 15;
             // 
+            // toolTip1
+            // 
+            toolTip1.AutoPopDelay = 5000;
+            toolTip1.InitialDelay = 1000;
+            toolTip1.ReshowDelay = 500;
+            toolTip1.ShowAlways = true;
+            // 
             // panel2
             // 
             panel2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -248,14 +255,14 @@ namespace LabelPrint
             // L_ConnectionStatus
             // 
             L_ConnectionStatus.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            L_ConnectionStatus.AutoSize = true;
             L_ConnectionStatus.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             L_ConnectionStatus.ForeColor = Color.DarkRed;
-            L_ConnectionStatus.Location = new Point(266, 24);
+            L_ConnectionStatus.Location = new Point(254, 24);
             L_ConnectionStatus.Name = "L_ConnectionStatus";
             L_ConnectionStatus.Size = new Size(98, 19);
             L_ConnectionStatus.TabIndex = 17;
             L_ConnectionStatus.Text = "Disconnected";
+            L_ConnectionStatus.TextAlign = ContentAlignment.MiddleRight;
             // 
             // Form1
             // 

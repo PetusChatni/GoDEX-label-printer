@@ -18,22 +18,9 @@ namespace LabelPrint
         public string Reason { get { return reason; } }
     }
 
-    public class ReadDataEventArgs : EventArgs
-    {
-        private byte[] data;
-
-        public ReadDataEventArgs(byte[] data)
-        {
-            this.data = data;
-        }
-
-        public byte[] Data { get { return data; } }
-    }
-
     internal class SocketReadReceiver
     {
         public event EventHandler<StatusChangeEventArgs>? StatusChanged;
-        //public event EventHandler<ReadDataEventArgs>? ReadData;
         private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
 
         public event Action<string> DataReceived;
@@ -43,7 +30,6 @@ namespace LabelPrint
             StatusChanged?.Invoke(this, e);
         }
 
-        // Image upload isn't working still - suspecting two send & receive fns firing
         /// <summary>
         /// Meant to test connection, but currently destroys sending & receiving in app :)
         /// </summary>
@@ -63,23 +49,15 @@ namespace LabelPrint
 
             try
             {
-                //byte[] heartbeatPayload = new byte[] { 0x00 };
-
                 while (!token.IsCancellationRequested)
                 {
-                    //MessageBox.Show("Running");
-                    //await Task.Delay(pingInterval, token);
-
-                    //// Sending to a powered-off device fails once TCP retransmissions expire
-                    //await socket.SendAsync(heartbeatPayload, SocketFlags.None, token);
-
                     int bytesRead = await socket.Client.ReceiveAsync(buffer, SocketFlags.None, token);
 
-                    //MessageBox.Show("SRR; 82; Continue travajon");
+                    //MessageBox.Show("SRR; 60; Continue travajon");
 
                     if (bytesRead == 0)
                     {
-                        //MessageBox.Show("0 bytes");
+                        //MessageBox.Show("SRR; 64; 0 bytes");
                         OnStatusChanged(new StatusChangeEventArgs(false, "Graceful Disconnect"));
                         break;
                     }
@@ -99,54 +77,9 @@ namespace LabelPrint
                             }
                         }
 
-                        //bool isFirstLoop = true;
-
-                        //while (socket.Available > 0 || isFirstLoop)
-                        //{
-                        //    bytesRead = await socket.GetStream(buffer, SocketFlags.None);
-                        //    response.Append(Encoding.Default.GetString(buffer, 0, bytesRead));
-
-                        //    isFirstLoop = false;
-                        //}
-
                         DataReceived?.Invoke(response.ToString());                        
                         //MessageBox.Show($"Received + SRR: {response.ToString()}");
                     }
-
-                    // Copy received bytes and publish to the app
-                    //byte[] receivedData = new byte[bytesRead];
-                    //Array.Copy(buffer, receivedData, bytesRead);
-
-                    // Exclude heartbeat bytes (e.g., 0x00) if applicable, then trigger event
-                    
-
-                    //// Pending read completes instantly when the OS detects a state change
-                    //int bytesRead = await socket.ReceiveAsync(buffer, SocketFlags.None);
-
-                    //MessageBox.Show("Received");
-
-                    //if (bytesRead == 0)
-                    //{
-                    //    OnStatusChanged(new StatusChangeEventArgs(false, "Graceful Disconnect"));
-                    //    break;
-                    //}
-
-                    //StringBuilder response = new();
-                    //response.Append(Encoding.Default.GetString(buffer, 0, bytesRead));
-
-                    // Process data...
-                    // Change to some other fn (idk which exactly)
-                    //using (NetworkStream stream = socket.GetStream())
-                    //{
-                    //    while (stream.DataAvailable)
-                    //    {
-                    //        bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    //        response.Append(Encoding.Default.GetString(buffer, 0, bytesRead));
-                    //    }
-                    //}
-
-
-                    //OnReadData(new ReadDataEventArgs());
                 }
             }
             catch (Exception ex)
@@ -157,22 +90,16 @@ namespace LabelPrint
                 OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
                 return;
             }
-            //catch (SocketException ex)
-            //{
-            //    // Triggered immediately by Keep-Alive failure, reset, or network drop
-            //    //MessageBox.Show("Status Changed");
-            //    OnStatusChanged(new StatusChangeEventArgs(false, ex.SocketErrorCode.ToString()));
-            //}
-            //catch (OperationCanceledException ex)
-            //{
-            //    // Normal shutdown
-            //    OnStatusChanged(new StatusChangeEventArgs(false, ex.Message));
-            //}
         }
 
+        /// <summary>
+        /// Sends data safely (takes into account possible asynchronous sends)
+        /// </summary>
+        /// <param name="data">Data to send as byte array</param>
+        /// <param name="socket">Socket used to send data</param>
         public void SendData(byte[] data, ref TcpClient socket)
         {
-            // Wait synchronously for the heartbeat or other sends to finish
+            // Wait synchronously for other sends to finish
             _sendLock.Wait();
             try
             {

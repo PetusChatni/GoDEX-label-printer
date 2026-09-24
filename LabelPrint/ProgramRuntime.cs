@@ -49,6 +49,14 @@ namespace LabelPrint
         public ref TcpClient Socket { get { return ref socket; } }
     }
 
+    public enum ExpectedReceivedInfoType 
+    {
+        None,
+        FileList,
+        CheckFileList,
+        StatusInfo
+    }
+
     internal class ProgramRuntime
     {
         private Form1 form1;
@@ -56,9 +64,6 @@ namespace LabelPrint
         private CancellationTokenSource cancelTokenSource;
         private readonly object _stateLock = new object();
         public bool IsMonitoring { get; private set; }
-
-        // Routes Received data to specific funcitons - because there's only one, it isn't used
-        // private string ReceivedDataRecepient;
 
         public ProgramRuntime()
         {
@@ -77,15 +82,16 @@ namespace LabelPrint
 
             form1.Connected += ConnectedToThePrinter;
             form1.Form2Created += Form2Created;
-            form1.RequestedMonitoringStateChange += ChangeSocketMonitoring;
             form1.SendData += SendDataToPrinter;
 
             Application.Run(form1);
-
-            // DEBUG ONLY
-            //Application.Run(new Form3());
         }
 
+        /// <summary>
+        /// Function that initializes socket monitoring and binds associated events
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ConnectedToThePrinter(object? sender, ConnectedEventArgs e)
         {
             bool socketReadReceiverCreated = false;
@@ -107,26 +113,7 @@ namespace LabelPrint
                         socketReadReceiver.StatusChanged += form1.Form2.ConnectionStatusChanged;
                 }
 
-                //MessageBox.Show("PR; 107; Changing Monitoring State ... ");
-
                 ChangeSocketMonitoring(this, new RequestMonitoringStateChangeEventArgs(true, ref form1.PrinterSocket));
-
-                // Offloads the async loop to a background thread without blocking
-                //Task.Run(async () =>
-                //{
-                //    try
-                //    {
-                //        await socketReadReceiver.MonitorSocketAsync(e.PrinterSocket.Client, new TimeSpan(TimeSpan.TicksPerMillisecond*200), cancelTokenSource.Token);
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        MessageBox.Show($"Exeption - sRR: {ex.Message}");
-                //        socketReadReceiver.OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
-
-                //        // Log or handle any unhandled exceptions from the background task
-                //        //Console.WriteLine($"Background socket monitor fault: {ex.Message}");
-                //    }
-                //});
             }
         }
 
@@ -135,12 +122,15 @@ namespace LabelPrint
             IsMonitoring = e.IsConnected;
         }
 
+        /// <summary>
+        /// Stops / starts socket monitoring
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ChangeSocketMonitoring(object? sender, RequestMonitoringStateChangeEventArgs e)
         {
             if (!e.ResumeMonitoring)
             {
-                //MessageBox.Show("Canceled");
-                
                 lock (_stateLock)
                 {
                     if (!IsMonitoring) return;
@@ -155,8 +145,6 @@ namespace LabelPrint
             }
             else
             {
-                //MessageBox.Show("Resumed");
-
                 lock (_stateLock)
                 {
                     // Prevent starting multiple monitoring tasks simultaneously
@@ -185,11 +173,15 @@ namespace LabelPrint
             }
         }
 
+        /// <summary>
+        /// Binds functions to events in Form2
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form2Created(object? sender, CreatedForm2EventArgs e)
         {
             if (form1.Form2 != null)
             {
-                //form1.Form2.RequestedMonitoringStateChange += ChangeSocketMonitoring;
                 form1.Form2.SendData += SendDataToPrinter;
                 socketReadReceiver.DataReceived += form1.Form2.UpdateFiles;
 

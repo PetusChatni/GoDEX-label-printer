@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Eventing.Reader;
-using System.Drawing.Imaging;
+﻿using System.Drawing.Imaging;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -49,17 +48,12 @@ namespace LabelPrint
             // Checks if output is valid
             if (printerOutput == null || printerOutput == "" || !printerOutput.Contains("\r\n") || printerOutput.IndexOf("\r\n") == printerOutput.LastIndexOf("\r\n"))
             {
-                //MessageBox.Show("Invalid");
                 return null;
             }
-
-            //MessageBox.Show($"got through null: {printerOutput}");
 
             // Cleans output and splits it to strings about files
             string cleanOutput = printerOutput.Substring(printerOutput.IndexOf("\r\n") + 2);
             cleanOutput = cleanOutput.Substring(0, cleanOutput.LastIndexOf("\r\n"));
-
-            //MessageBox.Show($"Displaying {cleanOutput}");
 
             string[] readyArr = cleanOutput.Split("\r\n");
 
@@ -81,8 +75,6 @@ namespace LabelPrint
                 }
             }
 
-            //MessageBox.Show("Displaying ... ");
-
             foreach (string file in readyArr)
             {
                 // Extracts data about file
@@ -98,7 +90,6 @@ namespace LabelPrint
 
                 if (updateDataGridView)
                 {
-                    //MessageBox.Show("Added");
                     if (DGV_Files.InvokeRequired && addAction != null)
                     {
                         // Safely marshal the execution to the UI thread
@@ -112,8 +103,107 @@ namespace LabelPrint
                 }
             }
 
-            //MessageBox.Show("Returned");
             return returns;
+        }
+
+        #region Image
+        /// <summary>
+        /// Resizes (if sizes aren't -1) image provided and returns it as byte array
+        /// </summary>
+        /// <param name="image">Image to convert</param>
+        /// <param name="newWidth">New width</param>
+        /// <param name="newHeight">New height</param>
+        /// <returns>Image as a byte array</returns>
+        public static byte[] ConvertImageIntoByteArray(Image image, float newWidth = -1, float newHeight = -1)
+        {
+            // Uses image size if new wasn't provided
+            int translatedWidth = newWidth == -1 ? image.Width : (int) newWidth;
+            int translatedHeight = newHeight == -1 ? image.Height : (int) newHeight;
+
+            try
+            {
+                using (Bitmap original = new Bitmap(image))
+                {
+                    // Converts source image to 1-bit monochrome indexed bitmap
+                    using (Bitmap monoImg = original.Clone(
+                        new Rectangle(0, 0, original.Width, original.Height),
+                        PixelFormat.Format1bppIndexed))
+                    {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            monoImg.SetResolution(image.HorizontalResolution, image.VerticalResolution);
+
+                            // Creates blank canvas
+                            Bitmap resizedImg = new Bitmap(translatedWidth, translatedHeight);
+                            Graphics gfx = Graphics.FromImage(resizedImg);
+
+                            // Resizes image
+                            gfx.DrawImage(monoImg, 0, 0, translatedWidth, translatedHeight);
+
+                            // Converts resized image to bmp & loads it into MemoryStream ms
+                            Bitmap send = resizedImg.Clone(new Rectangle(0, 0, resizedImg.Width, resizedImg.Height),
+                                PixelFormat.Format1bppIndexed);
+
+                            send.Save(ms, ImageFormat.Bmp);
+
+                            // Deletes Bitmaps from memory
+                            resizedImg.Dispose();
+                            send.Dispose();
+
+                            // Returns full 1-bit BMP byte array with 54-byte header
+                            return ms.ToArray();
+                        }
+                    }
+                }
+            }
+            catch { return []; }
+        }
+
+        /// <summary>
+        /// Adds command header to image bytes = command understandable by printer
+        /// </summary>
+        /// <param name="filename">New name for the image on the printer</param>
+        /// <param name="bytes">Bytes of image that will be sent</param>
+        /// <returns>Printer ready command</returns>
+        public static byte[] ConvertImageToPrinterCommand(string filename, byte[] bytes)
+        {
+            // Command for image upload
+            byte[] commandHeader = Encoding.Default.GetBytes($"~Eb,{filename},{bytes.Length}\r\n");
+
+            // Full byte array with command & image that will be sent to the printer
+            byte[] command = new byte[commandHeader.Length + bytes.Length];
+            Buffer.BlockCopy(commandHeader, 0, command, 0, commandHeader.Length);
+            Buffer.BlockCopy(bytes, 0, command, commandHeader.Length, bytes.Length);
+
+            // Saves command as .txt
+            string pathImg = $@"{AppContext.BaseDirectory}imgs";
+
+            byte[] saveCommandHeader = Encoding.Default.GetBytes($"~Eb,{filename},{bytes.Length}\\r\\n");
+
+            FileHandler.SaveImageUploadCommand(pathImg, filename, saveCommandHeader, bytes);
+
+            return command;
+        }
+        #endregion
+
+        /// <summary>
+        /// Converts 2 types of data into printer ready commands<br>
+        /// Types are: 1. Image command (~E); 2. Other data & commands
+        /// </summary>
+        /// <param name="data">String input from user</param>
+        /// <returns>Printer ready command</returns>
+        public static byte[] ConvertDataIntoCommand(string data)
+        {
+            string strippedData = data.Replace(" ", "");
+            if (!data.EndsWith("\r\n") && !strippedData.StartsWith("~E"))
+            {
+                data += "\r\n";
+                return Encoding.Default.GetBytes(data);
+            }
+            else if (strippedData.StartsWith("~E") && data.Split("\\r\\n").Length == 2)
+                return FileHandler.LoadImageUploadCommand(data);
+
+            return [];
         }
     }
 
@@ -188,143 +278,5 @@ namespace LabelPrint
 
             return true;
         }
-
-        #region Communication
-        /// <summary>
-        /// Sends a byte array message to a remote socket
-        /// </summary>
-        /// <param name="socket">Reference to remote socket</param>
-        /// <param name="ip">Remote socket's ip</param>
-        /// <param name="port">Remote socket's port</param>
-        /// <param name="commandToSend">Message to send</param>
-        /// <param name="shouldReceiveData">Should receive data or not</param>
-        /// <returns></returns>
-        public static string CommunicateWithRemote(ref TcpClient socket, IPAddress ip, int port, byte[] commandToSend, bool shouldReceiveData = false)
-        {
-            Connect(ref socket, ip, port);
-            //if (socket != null && !socket.Connected)
-            //{
-            //    MessageBox.Show("disconnecteddddddd");
-
-            //}
-            //else if (socket == null)
-            //{
-            //    MessageBox.Show("null");
-            //    return "";
-            //}
-            if (socket == null || !socket.Connected)
-            {
-                //MessageBox.Show("nah");
-                return "";
-            }
-
-            try
-            {
-                //MessageBox.Show($"Sending {Encoding.Default.GetString(commandToSend)}");
-                using (NetworkStream stream = socket.GetStream())
-                {
-                    stream.Write(commandToSend, 0, commandToSend.Length);
-                    stream.Flush();
-
-                    if (!shouldReceiveData)
-                    {
-                        //MessageBox.Show("Sent");
-                        return "";
-                    }
-
-                    System.Threading.Thread.Sleep(300);
-                    //MessageBox.Show("Receiving");
-
-                    StringBuilder response = new StringBuilder();
-                    byte[] buffer = new byte[1024];
-
-                    // Reads response back from the printer
-                    while (stream.DataAvailable)
-                    {
-                        int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                        response.Append(Encoding.Default.GetString(buffer, 0, bytesRead));
-                    }
-
-                    return response.ToString();
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Connection failed", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return "";
-            }
-        }
-
-        // Non-static version
-        public string CommunicateWithRemote(ref TcpClient socket, byte[] commandToSend, bool shouldReceiveData = false)
-        {
-            return CommunicateWithRemote(ref socket, ip, port, commandToSend, shouldReceiveData);
-        }
-
-        // Most difficult translation mb
-        /// <summary>
-        /// Sents image to the printer
-        /// </summary>
-        /// <param name="socket">Printer socket</param>
-        /// <param name="ip">Printers IP adress</param>
-        /// <param name="port">Printers port</param>
-        /// <param name="path">Path to the image on local PC</param>
-        /// <param name="filename">New name for the image on the printer</param>
-        /// <returns>Whether image was sent (true) or not (false)</returns>
-        public static byte[] AddImageToPrinter(ref TcpClient socket, IPAddress ip, int port, string path, string filename, byte[] bytes)
-        {
-            // Translates the file into byte array
-            //byte[] bytes = FileHandler.GetImageBytes(path, filename);
-            //if (bytes.Length < 1)
-            //{
-            //    MessageBox.Show("Error occured when trying to translate image into bytes.", "Translation error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            //    return false;
-            //}
-
-            //DataGridView? fn = null;
-
-            // <MIGRATION>
-            // Checks if file with provided filename already exists
-            // Split the function
-            //if (SocketCommunicationTranslator.ProcessFiles(CommunicateWithRemote(ref socket, ip, port,
-            //    Encoding.Default.GetBytes("~MDIR\r\n"), true), ref fn)?.ContainsFilename(filename) == true)
-            //{
-            //    // Asks user whether they would like to delete the existing file, and does so if user agrees
-            //    if (MessageBox.Show($"File with name: {filename} already exists. Would you like to delete the existing file?",
-            //    "Filename conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-            //    {
-            //        CommunicateWithRemote(ref socket, ip, port, Encoding.Default.GetBytes($"~MDELG,{filename}\r\n"));
-            //    }
-            //    else
-            //    {
-            //        return false;
-            //    }
-            //}
-            // </MIGRATION>
-
-            // Command for image upload
-            byte[] commandHeader = Encoding.Default.GetBytes($"~Eb,{filename},{bytes.Length}\r\n");
-
-            // Full byte array with command & image that will be sent to the printer
-            byte[] command = new byte[commandHeader.Length + bytes.Length];
-            Buffer.BlockCopy(commandHeader, 0, command, 0, commandHeader.Length);
-            Buffer.BlockCopy(bytes, 0, command, commandHeader.Length, bytes.Length);
-
-            // Saves command as .txt
-            string pathImg = $@"{AppContext.BaseDirectory}imgs";
-
-            byte[] saveCommandHeader = Encoding.Default.GetBytes($"~Eb,{filename},{bytes.Length}\\r\\n");
-
-            FileHandler.SaveCommand(pathImg, filename, saveCommandHeader, bytes);
-
-            return command;
-        }
-
-        // Non-static version
-        public byte[] AddImageToPrinter(ref TcpClient socket, string path, string filename, byte[] bytes)
-        {
-            return AddImageToPrinter(ref socket, ip, port, path, filename, bytes);
-        }
-        #endregion
     }
 }
