@@ -74,14 +74,12 @@ namespace LabelPrint
                             }
                         }
 
-                        DataReceived?.Invoke(response.ToString());                        
-                        //MessageBox.Show($"SRR; 78; Received: {response.ToString()}");
+                        DataReceived?.Invoke(response.ToString());
                     }
                 }
             }
             catch (Exception ex)
             {
-                //MessageBox.Show($"SRR; 84; {ex.Message}");
                 if (socket != null)
                     socket.Close();
                 OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
@@ -103,13 +101,9 @@ namespace LabelPrint
                 if (socket != null && socket.Client != null)
                 {
                     socket.Client.Send(data);
-                    //MessageBox.Show($"SRR; 106; Sent: {Encoding.Default.GetString(data)}");
                 }
             }
-            catch (Exception ex)
-            {
-                //MessageBox.Show($"SRR; 111; {ex.Message}");
-            }
+            catch {}
             finally
             {
                 _sendLock.Release();

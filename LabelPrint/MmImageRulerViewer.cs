@@ -3,6 +3,9 @@ using System.Drawing.Imaging;
 
 namespace LabelPrint
 {
+    /// <summary>
+    /// Control for previewing images with changeable size and DPI
+    /// </summary>
     public partial class MmImageRulerViewer : ScrollableControl
     {
         private Image originalImage;
@@ -153,7 +156,6 @@ namespace LabelPrint
 
                 if (ModifierKeys.HasFlag(Keys.Shift))
                 {
-                    //MessageBox.Show("works?");
                     // Shift + Mouse Wheel -> Horizontal Scrolling
                     int newX = currentX - scrollDelta;
                     AutoScrollPosition = new Point(newX, currentY);

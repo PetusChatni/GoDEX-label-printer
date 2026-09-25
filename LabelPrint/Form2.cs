@@ -15,6 +15,7 @@ namespace LabelPrint
         private bool isConnected;
         private bool updateDGVWithPrinterOutput = false;
         private ExpectedReceivedInfoType expectedReceive = ExpectedReceivedInfoType.None;
+        
         private CancellationTokenSource ctk;
 
         public event EventHandler<byte[]> SendData;
@@ -63,7 +64,6 @@ namespace LabelPrint
         {
             if (!isReceivingData)
             {
-                MessageBox.Show(printerOutput);
                 return;
             }
 
@@ -77,7 +77,15 @@ namespace LabelPrint
                         DGV_Files.Rows.Clear();
                     }), new Action<string[]>((string[] data) =>
                     {
+                        DataGridViewCellStyle dataGridViewCellStyle2 = new();
+                        dataGridViewCellStyle2.Padding = new Padding(100000, 0, 0, 0);
+
                         DGV_Files.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
+
+                        if (DGV_Files != null && data[1].Replace(" ", "") != "IMG")
+                        {
+                            DGV_Files.Rows[DGV_Files.Rows.Count - 1].Cells[3].Style = dataGridViewCellStyle2;
+                        }
                     }));
 
                     expectedReceive = ExpectedReceivedInfoType.StatusInfo;
@@ -418,9 +426,21 @@ namespace LabelPrint
             await Task.Delay(milisecDelay);
 
             if (!ct.IsCancellationRequested && calledFromUpload)
-                UpdateFiles("00\r\n");
+                if (this.InvokeRequired)
+                {
+                    this.BeginInvoke(new Action(() => { UpdateFiles("00\r\n"); }));
+                }
+                else
+                {
+                    UpdateFiles("00\r\n");
+                }
             else if (!ct.IsCancellationRequested)
-                isReceivingData = false;
+            {
+                if (this.InvokeRequired)
+                    this.BeginInvoke(new Action(() => { isReceivingData = false; }));
+                else
+                    isReceivingData = false;
+            }
         }
 
         public bool IsConnected { get { return isConnected; } }

@@ -177,7 +177,6 @@ namespace LabelPrint
                         catch (Exception ex)
                         {
                             IsMonitoring = false;
-                            //MessageBox.Show($"PR; 168; Exception - SRR: {ex.Message}");
                             socketReadReceiver.OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
                         }
                     }, cancelTokenSource.Token);

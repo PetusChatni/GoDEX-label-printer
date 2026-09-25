@@ -90,15 +90,23 @@ namespace LabelPrint
 
                 if (updateDataGridView)
                 {
-                    if (DGV_Files.InvokeRequired && addAction != null)
+                    if (DGV_Files?.InvokeRequired == true && addAction != null)
                     {
                         // Safely marshal the execution to the UI thread
                         DGV_Files.BeginInvoke(new Action(() => addAction(data.ToArray())));
                     }
                     else
                     {
+                        DataGridViewCellStyle dataGridViewCellStyle2 = new();
+                        dataGridViewCellStyle2.Padding = new Padding(100000, 0, 0, 0);
+
                         // Direct update if already on UI thread
                         DGV_Files?.Rows.Add(new object[] { data[0], data[1], data[2], new Button() });
+
+                        if (DGV_Files != null && data[1].Replace(" ", "") != "IMG")
+                        {
+                            DGV_Files.Rows[DGV_Files.Rows.Count - 1].Cells[3].Style = dataGridViewCellStyle2;
+                        }
                     }
                 }
             }
