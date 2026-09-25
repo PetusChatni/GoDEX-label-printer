@@ -44,6 +44,7 @@
             L_DPI = new Label();
             NUD_DPI = new NumericUpDown();
             toolTip1 = new ToolTip(components);
+            L_ImgDiskSize = new Label();
             ((System.ComponentModel.ISupportInitialize)NUD_Width).BeginInit();
             ((System.ComponentModel.ISupportInitialize)NUD_Height).BeginInit();
             ((System.ComponentModel.ISupportInitialize)NUD_DPI).BeginInit();
@@ -143,6 +144,7 @@
             MIRV_Preview.Size = new Size(250, 250);
             MIRV_Preview.TabIndex = 12;
             MIRV_Preview.DPIUpdated += UpdateScaleFromMIRV;
+            MIRV_Preview.ImageSizeUpdated += UpdateImageDiskSize;
             // 
             // NUD_Width
             // 
@@ -199,11 +201,22 @@
             toolTip1.ReshowDelay = 500;
             toolTip1.ShowAlways = true;
             // 
+            // L_ImgDiskSize
+            // 
+            L_ImgDiskSize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            L_ImgDiskSize.Location = new Point(360, 12);
+            L_ImgDiskSize.Name = "L_ImgDiskSize";
+            L_ImgDiskSize.Size = new Size(250, 15);
+            L_ImgDiskSize.TabIndex = 13;
+            L_ImgDiskSize.Text = "0 B";
+            L_ImgDiskSize.TextAlign = ContentAlignment.MiddleRight;
+            // 
             // Form3
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(621, 291);
+            Controls.Add(L_ImgDiskSize);
             Controls.Add(NUD_DPI);
             Controls.Add(L_DPI);
             Controls.Add(NUD_Height);
@@ -244,5 +257,6 @@
         private Label L_DPI;
         private NumericUpDown NUD_DPI;
         private ToolTip toolTip1;
+        private Label L_ImgDiskSize;
     }
 }

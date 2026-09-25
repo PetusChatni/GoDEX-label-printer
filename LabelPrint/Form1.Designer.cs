@@ -88,6 +88,7 @@ namespace LabelPrint
             TB_IP.Name = "TB_IP";
             TB_IP.Size = new Size(100, 23);
             TB_IP.TabIndex = 1;
+            toolTip1.SetToolTip(TB_IP, "IPv4 or IPv6");
             // 
             // BTN_Connect
             // 
@@ -212,7 +213,6 @@ namespace LabelPrint
             // toolStripContainer1
             // 
             toolStripContainer1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            toolStripContainer1.TabIndex = 6;
             // 
             // toolStripContainer1.ContentPanel
             // 

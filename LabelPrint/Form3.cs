@@ -34,7 +34,7 @@ namespace LabelPrint
         private void BTN_AddImg_Click(object sender, EventArgs e)
         {
             if (!FieldChecker.IsNameValid(TB_Name.Text, out filename) |
-                !FieldChecker.IsFilePathValid(TB_Path.Text, out path))
+                !FieldChecker.IsFilePathValid(TB_Path.Text))
             {
                 return;
             }
@@ -66,7 +66,6 @@ namespace LabelPrint
         {
             if (TB_Path.Text != path)
             {
-                MessageBox.Show($"orig: {ReplaceCtrl(TB_Path.Text)}, stored: {ReplaceCtrl(path)}");
                 path = TB_Path.Text;
 
                 UpdatePreview();
@@ -118,9 +117,16 @@ namespace LabelPrint
                 NUD_Width.Value = (decimal)sizes[0];
                 NUD_Height.Value = (decimal)sizes[1];
             }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show("Access to file denied.\nPath is either invalid or file has insufficient permisions.", "Access error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MIRV_Preview.ClearImage();
+                NUD_Width.Value = (decimal).01f;
+                NUD_Height.Value = (decimal).01f;
+            }
             catch (Exception ex)
             {
-                //MessageBox.Show($"Form3.cs; 80; {ex.Message}");
+                MessageBox.Show($"Form3.cs; 122; {ex.Message}; {ex.GetType()}");
                 MIRV_Preview.ClearImage();
                 NUD_Width.Value = (decimal).01f;
                 NUD_Height.Value = (decimal).01f;
@@ -182,6 +188,19 @@ namespace LabelPrint
                 NUD_Height.Value = (decimal)MIRV_Preview.MmHeight;
 
                 updatingSize = false;
+            }
+        }
+
+        private void UpdateImageDiskSize(object? sender, ImageSizeUpdatedEventArgs e)
+        {
+            if (MIRV_Preview != null && e.Size > 0)
+            {
+                // Printer like disk size data (357 B -> 1 KB)
+                L_ImgDiskSize.Text = $"{Math.Ceiling((float)e.Size / 1024):0} KB";
+            }
+            else if (MIRV_Preview != null)
+            {
+                L_ImgDiskSize.Text = "0 B";
             }
         }
 

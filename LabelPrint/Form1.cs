@@ -149,10 +149,6 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void BTN_OpenMemoryManager_Click(object sender, EventArgs e)
         {
-            // Closes printer socket
-            //if(printerIP != null)
-            //    SocketCommunicationHandler.Connect(ref printerSocket, printerIP, printerPort, false, false, false);
-
             if (printerSocket == null || !printerSocket.Connected)
             {
                 MessageBox.Show("Firstly, connect to the printer.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);

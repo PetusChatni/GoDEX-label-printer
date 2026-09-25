@@ -106,12 +106,9 @@ namespace LabelPrint
         /// Checks if file path is valid
         /// </summary>
         /// <param name="pathInp">Path provided</param>
-        /// <param name="path">Variable in which path should be stored</param>
         /// <returns>File path validity</returns>
-        public static bool IsFilePathValid(string pathInp, out string path)
+        public static bool IsFilePathValid(string pathInp)
         {
-            path = "";
-
             if (!File.Exists(pathInp))
             {
                 MessageBox.Show("Access to file denied.\nPath is either invalid or file has insufficient permisions.", "Access error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -126,7 +123,6 @@ namespace LabelPrint
                 return false;
             }
 
-            path = pathInp;
             return true;
         }
     }

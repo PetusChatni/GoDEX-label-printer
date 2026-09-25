@@ -49,6 +49,18 @@ namespace LabelPrint
         public ref TcpClient Socket { get { return ref socket; } }
     }
 
+    public class ImageSizeUpdatedEventArgs : EventArgs
+    {
+        private long size;
+
+        public ImageSizeUpdatedEventArgs(long size)
+        {
+            this.size = size;
+        }
+
+        public long Size { get { return size; } }
+    }
+
     public enum ExpectedReceivedInfoType 
     {
         None,
@@ -165,7 +177,7 @@ namespace LabelPrint
                         catch (Exception ex)
                         {
                             IsMonitoring = false;
-                            //MessageBox.Show($"PR; 163; Exception - SRR: {ex.Message}");
+                            //MessageBox.Show($"PR; 168; Exception - SRR: {ex.Message}");
                             socketReadReceiver.OnStatusChanged(new StatusChangeEventArgs(false, "Disconnected"));
                         }
                     }, cancelTokenSource.Token);

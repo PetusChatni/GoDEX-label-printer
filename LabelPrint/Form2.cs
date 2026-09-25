@@ -43,6 +43,16 @@ namespace LabelPrint
             updateDGVWithPrinterOutput = true;
 
             CommunicateWithPrinter(Encoding.Default.GetBytes("~MDIR\r\n"));
+
+            ctk = new();
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await TimeoutAfterUpload(7500, false, ctk.Token);
+                }
+                catch { }
+            }, ctk.Token);
         }
 
         /// <summary>
@@ -52,7 +62,10 @@ namespace LabelPrint
         public void UpdateFiles(string printerOutput)
         {
             if (!isReceivingData)
+            {
+                MessageBox.Show(printerOutput);
                 return;
+            }
 
             switch (expectedReceive)
             {
@@ -71,6 +84,8 @@ namespace LabelPrint
 
                     return;
                 case ExpectedReceivedInfoType.CheckFileList:
+                    updateDGVWithPrinterOutput = false;
+
                     if (SocketCommunicationTranslator.ProcessFiles(printerOutput, ref DGV_Files)?.ContainsFilename(filename) == true)
                     {
                         // Asks user whether they would like to delete the existing file, and does so if user agrees
@@ -87,6 +102,8 @@ namespace LabelPrint
                     }
 
                     expectedReceive = ExpectedReceivedInfoType.StatusInfo;
+                    if (printerOutput.EndsWith("KB free\r\n"))
+                        UpdateFiles(printerOutput);
 
                     return;
                 case ExpectedReceivedInfoType.StatusInfo:
@@ -101,10 +118,9 @@ namespace LabelPrint
 
                             isReceivingData = false;
                             updateDGVWithPrinterOutput = false;
+                            ctk.Cancel();
                             return;
                         }
-
-                        MessageBox.Show("Here");
 
                         // Gets free memory amount in B
                         int bytesRemaining = -1;
@@ -134,16 +150,14 @@ namespace LabelPrint
 
                             CommunicateWithPrinter(command);
 
+                            ctk = new();
                             Task.Run(async () =>
                             {
                                 try
                                 {
-                                    await TimeoutAfterUpload(ctk.Token);
+                                    await TimeoutAfterUpload(15000, true, ctk.Token);
                                 }
-                                catch (Exception ex)
-                                {
-                                    MessageBox.Show(ex.Message);
-                                }
+                                catch {}
                             }, ctk.Token);
 
                             return;
@@ -272,7 +286,7 @@ namespace LabelPrint
         /// <param name="e"></param>
         private void BTN_AddImg_Click(object sender, EventArgs e)
         {
-            if (!parent.PrinterSocket.Connected)
+            if (!parent.PrinterSocket.Connected || isReceivingData)
                 return;
 
             if (form3 == null)
@@ -399,12 +413,14 @@ namespace LabelPrint
             }
         }
 
-        public async Task TimeoutAfterUpload(CancellationToken ct)
+        public async Task TimeoutAfterUpload(int milisecDelay, bool calledFromUpload, CancellationToken ct)
         {
-            await Task.Delay(15000);
+            await Task.Delay(milisecDelay);
 
-            if(!ct.IsCancellationRequested)
+            if (!ct.IsCancellationRequested && calledFromUpload)
                 UpdateFiles("00\r\n");
+            else if (!ct.IsCancellationRequested)
+                isReceivingData = false;
         }
 
         public bool IsConnected { get { return isConnected; } }

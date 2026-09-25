@@ -18,6 +18,7 @@ namespace LabelPrint
         private float dpiY = 203;
 
         public event EventHandler<EventArgs> DPIUpdated;
+        public event EventHandler<ImageSizeUpdatedEventArgs> ImageSizeUpdated;
 
         public MmImageRulerViewer() { }
 
@@ -26,12 +27,28 @@ namespace LabelPrint
             DPIUpdated?.Invoke(this, new EventArgs());
         }
 
+        private void OnImageSizeUpdated()
+        {
+            if (_image == null)
+            {
+                ImageSizeUpdated?.Invoke(this, new(0));
+                return;
+            }
+
+            float width = (_mmWidth / 25.4f) * _image.HorizontalResolution;
+            float height = (_mmHeight / 25.4f) * _image.VerticalResolution;
+
+            ImageSizeUpdated?.Invoke(this, new(SocketCommunicationTranslator.ConvertImageIntoByteArray(_image, width, height).LongLength));
+        }
+
         /// <summary>
         /// Deletes image from preview
         /// </summary>
         public void ClearImage()
         {
             _image = null;
+
+            OnImageSizeUpdated();
             UpdateScrollBounds();
         }
 
@@ -52,17 +69,19 @@ namespace LabelPrint
                     monoImg.SetResolution(dpi, dpi);
                     originalImage = _image = monoImg.Clone(new Rectangle(0, 0, original.Width, original.Height), 
                         PixelFormat.Format1bppIndexed);
-
-                    //pixelSize = new Size(originalImage.Width, originalImage.Height);
                 }
             }
-            // Convert natural pixel size to physical mm based on original DPI metadata
-            _mmWidth = (_image.Width / _image.HorizontalResolution) * 25.4f;
-            _mmHeight = (_image.Height / _image.VerticalResolution) * 25.4f;
 
-            MessageBox.Show($"Size: {_image.Size}");
-            MessageBox.Show($"DPI: H:{_image.HorizontalResolution}; V:{_image.VerticalResolution}");
+            if (_image != null)
+            {
+                // Convert natural pixel size to physical mm based on original DPI metadata
+                _mmWidth = (_image.Width / _image.HorizontalResolution) * 25.4f;
+                _mmHeight = (_image.Height / _image.VerticalResolution) * 25.4f;
+            }
+            else
+                _mmWidth = _mmHeight = 0.01f;
 
+            OnImageSizeUpdated();
             UpdateScrollBounds();
             Invalidate();
         }
@@ -85,6 +104,7 @@ namespace LabelPrint
             _mmWidth = widthMm;
             _mmHeight = heightMm;
 
+            OnImageSizeUpdated();
             UpdateScrollBounds();
             Invalidate();
         }
@@ -116,7 +136,7 @@ namespace LabelPrint
         /// <param name="e"></param>
         protected override void OnMouseWheel(MouseEventArgs e)
         {
-            if (_image != null && (int)_mmHeight * (dpiY / 25.4f) >= Height - RulerSize)
+            if (_image != null)
             {
                 // Suppress standard control wheel handling to prevent double-scrolling
                 if (e is HandledMouseEventArgs hme)
@@ -133,6 +153,7 @@ namespace LabelPrint
 
                 if (ModifierKeys.HasFlag(Keys.Shift))
                 {
+                    //MessageBox.Show("works?");
                     // Shift + Mouse Wheel -> Horizontal Scrolling
                     int newX = currentX - scrollDelta;
                     AutoScrollPosition = new Point(newX, currentY);
@@ -177,16 +198,12 @@ namespace LabelPrint
             int scrollX = Math.Abs(AutoScrollPosition.X);
             int scrollY = Math.Abs(AutoScrollPosition.Y);
 
-            // DPI is calculated wrong: bigger DPI -> smaller image
-            // Currently:               bigger DPI -> bigger image
-
             // Calculate screen pixels per millimeter with constant (dpi is used in _mmWidth)
             float pxPerMmX = 203 / 25.4f * .05f;
             float pxPerMmY = 203 / 25.4f * .05f;
 
             // Convert target mm dimensions to pixel dimensions for drawing
-            // Error in calculations might be here
-            float imgPxWidth = _mmWidth * pxPerMmX * 10; // 254dpi, 100mm - 500 // 508dpi, 100mm - 
+            float imgPxWidth = _mmWidth * pxPerMmX * 10;
             float imgPxHeight = _mmHeight * pxPerMmY * 10;
 
             // 1. Draw Image (Anchored at top-left corner past the rulers)
@@ -200,7 +217,7 @@ namespace LabelPrint
                 float imgY = RulerSize - scrollY;
                 RectangleF imageRect = new RectangleF(imgX, imgY, imgPxWidth, imgPxHeight);
 
-                g.DrawImage(_image, imageRect);
+                try { g.DrawImage(_image, imageRect); } catch { }
                 g.Clip = originalClip;
             }
 
@@ -341,7 +358,7 @@ namespace LabelPrint
 
                     dpi = value;
 
-                    // Applies DPI
+                    // Applies DPI to the image
                     // Changes mm: px = (mm / 25.4) * dpi -> mm = (px / dpi) * 25.4
                     _mmWidth = Math.Clamp((newSizes[0] / dpi) * 25.4f, 0.01f, 1000);
                     _mmHeight = Math.Clamp((newSizes[1] / dpi) * 25.4f, 0.01f, 1000);
@@ -359,6 +376,7 @@ namespace LabelPrint
                     Invalidate();
 
                     OnDPIUpdated();
+                    OnImageSizeUpdated();
                 }
             }
         }
